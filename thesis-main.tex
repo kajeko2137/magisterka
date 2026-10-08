@@ -1,0 +1,317 @@
+% --- Plik: thesis-main.tex ---
+% Druk dwustronny, rozmiar A4
+
+\documentclass[11pt, a4paper, twoside]{report}
+
+% Załadowanie ustawień i makr z osobnych plików
+\input{thesis-packages.tex}
+\input{thesis-macros.tex}
+
+%Jeśli wybierasz klasyczny wygląd z wcięciami, dodaj to do preambuły:
+\setlength{\parindent}{0.5cm} % Wymusza wcięcie dokładnie 0,5 cm dla każdego akapitu
+\setlength{\parskip}{0pt}     % Wyłącza dodatkowe odstępy pionowe między akapitami
+
+%Jeśli wolisz blokowy układ tekstu, dodaj do preambuły ten kod:
+%\setlength{\parindent}{0pt}   % Całkowicie wyłącza wcięcia akapitowe
+%\setlength{\parskip}{4pt}     % Ustawia dokładnie 4 punkty pustej przestrzeni przed każdym nowym akapitem
+
+% Konfiguracja podpisów (tytułów) tabel i rysunków
+\captionsetup{
+	font={sf,footnotesize}, % sf = czcionka bezszeryfowa, footnotesize = odpowiednik ok. 9 pkt
+	justification=raggedright, % Wymusza justowanie do lewej krawędzi
+	singlelinecheck=false,     % Zapobiega automatycznemu wyśrodkowaniu krótkich podpisów
+	labelsep=period            % Wstawia kropkę po "Tabela 1" zamiast dwukropka
+}
+
+
+
+\begin{document}
+	
+	% Tymczasowe wyłączenie domyślnej numeracji dla stron początkowych (stylu 'plain')
+	\makeatletter
+	\let\origpsplain\ps@plain
+	\let\ps@plain\ps@empty
+	\makeatother
+	\pagestyle{empty}
+	
+	% ---------------- STRONA TYTUŁOWA (Strona 1) ----------------
+	\begin{titlepage}
+		\noindent
+		% Rejestracja bloku tekstu, aby zmierzyć szerokość napisu "Politechnika Warszawska"
+		\newbox{\pwbox}
+		\sbox{\pwbox}{{\adagioslab\fontsize{24}{28}\selectfont Politechnika Warszawska}}
+		
+		\begin{minipage}[t]{0.75\textwidth}
+			\vspace{0pt} % Wyrównanie do góry
+			% Politechnika Warszawska - wymóg: Adagio_Slab 24 pt [4]
+			\usebox{\pwbox}\\[0.5cm]
+			% Nazwa wydziału - wymóg: Adagio_Slab 12 pt, z rozstrzeleniem dopasowanym do szerokości napisu Politechnika Warszawska [4]
+			\makebox[\wd\pwbox][s]{{\adagioslab\fontsize{12}{14}\selectfont W\hfill Y\hfill D\hfill Z\hfill I\hfill A\hfill Ł\hfill \ \hfill M\hfill E\hfill C\hfill H\hfill A\hfill T\hfill R\hfill O\hfill N\hfill I\hfill K\hfill I}}
+		\end{minipage}%
+		\begin{minipage}[t]{0.25\textwidth}
+			\vspace{0pt}
+			\begin{flushright}
+				% Godło z prawej strony o średnicy 25 mm [4]
+				\includegraphics[width=25mm]{logopw.png}
+			\end{flushright}
+		\end{minipage}
+		
+		\vspace{1.5cm}
+		\begin{center}
+			% Typ pracy - wymóg: Adagio_Slab Light 43 pt [5]
+			{\adagioslablight\fontsize{43}{50}\selectfont Praca dyplomowa}\\[0.5cm]
+			{\adagioslablight\fontsize{43}{50}\selectfont magisterska}\\[1.5cm]
+			
+			% Dalsze teksty używają domyślnej czcionki dokumentu (zamiennik dla Helvetica Light) [5, 7]
+			{\fontsize{12}{14}\selectfont na kierunku Automatyka, Robotyka i Informatyka Przemysłowa}\\[1.5cm]
+			
+			% Tytuł pracy bez przedrostka - 14 pt (zastępstwo Helvetica) [5, 7]
+			{\fontsize{14}{16}\selectfont Projekt i implementacja schedulera systemów operacyjnych o złożoności O(1) }\\[2cm]
+			
+			% Imię i Nazwisko - 21 pt (zastępstwo Helvetica) [6, 7]
+			{\fontsize{21}{24}\selectfont Kajetan Kontek}\\[0.5cm]
+			{\fontsize{12}{14}\selectfont numer albumu 327749}\\[1.5cm]
+			
+			{\fontsize{12}{14}\selectfont promotor}\\[0.5cm]
+			{\fontsize{12}{14}\selectfont dr inż. Bartłomiej Fajdek}
+			
+			% Miękkie wypchnięcie tekstu na dół strony
+			\vfill
+			{\fontsize{12}{14}\selectfont WARSZAWA 2027}
+		\end{center}
+	\end{titlepage}
+	
+% Pusta strona po stronie tytułowej (Strona 2)
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- STRESZCZENIE PL (Strona 3) ----------------
+
+\clearpage % Rozpoczynamy nową stronę
+\thispagestyle{plain} % Ukrywa nagłówki, zostawia sam numer strony na dole (zgodnie z PW)
+
+\begingroup
+% Wymuszenie czcionki 12pt oraz interlinii 14pt (standardowa pojedyncza interlinia dla 12pt)
+\fontsize{12pt}{14pt}\selectfont 
+
+% Wycentrowany tytuł pracy po polsku
+\begin{center}
+	\textbf{Streszczenie} \\[0.5cm]
+	\textbf{Modułowy szablon pracy dyplomowej w systemie \LaTeX{}}
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent Wytyczne Rektora Politechniki Warszawskiej precyzują kilka rygorystycznych wymogów odnośnie streszczenia pracy dyplomowej. Streszczenie stanowi odrębny punkt w układzie pracy i musi znajdować się na \textbf{osobnej stronie}. Obowiązuje tu również \textbf{ścisła objętość i formatowanie}, ponieważ każde streszczenie, niezależnie od języka, musi zajmować dokładnie jedną stronę, przy czym należy w nim zastosować pojedynczy odstęp (interlinię) oraz czcionkę o rozmiarze 12 pkt. 
+
+Jeśli chodzi o \textbf{wymagane elementy}, to poza samym tekstem podsumowującym pracę, w każdym streszczeniu obowiązkowo musi pojawić się tytuł pracy oraz zestaw słów kluczowych. W praktyce akademickiej jako zestaw słów kluczowych przyjmuje się zazwyczaj od 3 do 5 pojęć lub krótkich fraz, które najdokładniej oddają tematykę i zakres przeprowadzonych w pracy badań. Umieszcza się je pod tekstem streszczenia.
+
+Same \textbf{wersje językowe} zależą bezpośrednio od tego, w jakim języku napisana jest cała praca. Dla pracy w języku polskim wymagane jest osobne streszczenie po polsku oraz drugie streszczenie po angielsku. Dla pracy w języku angielskim wymagane jest streszczenie po angielsku oraz streszczenie po polsku (w tej kolejności). Z kolei dla pracy w innym języku obcym wymagane jest streszczenie w języku, w którym napisano pracę, a ponadto streszczenie po polsku oraz streszczenie po angielsku. \textbf{Opcjonalnie}, jeśli zamierzasz wystąpić o wydanie odpisu dyplomu w tłumaczeniu na jeszcze inny język obcy, powinieneś dołączyć dodatkowe streszczenie napisane w tym właśnie języku.
+
+Warto zadbać o to, aby styl pisania był zwięzły i odzwierciedlał strukturę pracy: cel, metody, wyniki i wnioski.
+
+\vspace{1.0cm} % Zwiększony odstęp pionowy 
+\noindent \textbf{Słowa kluczowe:} praca dyplomowa, układ modułowy, \LaTeX{}
+
+\endgroup
+\clearpage % Wymuszenie końca strony - gwarancja, że streszczenie zajmie DOKŁADNIE 1 stronę
+
+
+% Pusta strona po streszczeniu polskim (Strona 4)
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- STRESZCZENIE EN (Strona 5) ----------------
+\selectlanguage{english}
+% Identyczny mechanizm dla wersji obcojęzycznej
+\thispagestyle{plain}
+\begingroup
+\fontsize{12pt}{14pt}\selectfont 
+
+% Wycentrowany tytuł pracy po angielsku
+\begin{center}
+	\textbf{Abstract} \\[0.5cm]
+	\textbf{Modular diploma thesis template in LaTeX system}
+\end{center}
+
+\vspace{0.5cm}
+
+\noindent Here goes the English version of your abstract. It must follow the exact same formatting rules: 12pt font size, single line spacing, and it must fit entirely on this single page.
+
+\vspace{1.0cm}
+
+\noindent \textbf{Keywords:} diploma thesis, modular layout, \LaTeX{}
+\endgroup
+\clearpage % Koniec strony dla abstractu
+
+% Powrót do języka polskiego
+\selectlanguage{polish}
+
+
+% Pusta strona po streszczeniu angielskim (Strona 6)
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- SPIS TREŚCI (Strona 7) ----------------
+\tableofcontents
+
+% Pusta strona po spisie treści (Strona 8)
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- TREŚĆ GŁÓWNA PRACY (Strona 9) ----------------
+% Przywrócenie standardowej numeracji (styl 'plain') dla pierwszych stron rozdziałów
+\makeatletter
+\let\ps@plain\origpsplain
+\makeatother
+% Włączenie widocznej numeracji stron od tego miejsca [4]
+\pagestyle{fancy} 
+
+% Dołączanie kolejnych rozdziałów z osobnych plików
+\include{chapter1_intro}
+\include{chapter2_background}
+\include{chapter3_design}
+\include{chapter4_experiments}
+\include{chapter5_conclusions}
+
+\newpage
+
+% ---------------- BIBLIOGRAFIA ----------------
+
+% Zmiana nazwy nagłówka z domyślnego "Bibliografia" na "Literatura" 
+\addcontentsline{toc}{chapter}{Literatura}
+\printbibliography[title={Literatura}]
+
+% Pusta strona po stronie Literatura
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- WYKAZ SYMBOLI I SKRÓTÓW ----------------
+
+% Wykaz symboli i skrótów - jak nie ma, to zakomentować lub usunąć
+\chapter*{Wykaz symboli i skrótów}
+\addcontentsline{toc}{chapter}{Wykaz symboli i skrótów} % Opcjonalnie: dodaje wykaz do spisu treści
+
+\begin{tabular}{cl} % 'cl' centruje symbol i dosuwa opis do lewej
+	$\omega$ & prędkość kątowa [rad/s] \\
+	$M$      & moment obrotowy [Nm] \\
+	$U$      & napięcie zasilania [V] \\
+	$I$      & natężenie prądu [A] \\
+	$\theta$ & kąt obrotu wału silnika [$^\circ$ lub rad] \\
+	$F$      & siła ciągu/nacisku [N] \\
+	$k_p, k_i, k_d$ & nastawy (wzmocnienia) regulatora PID \\
+\end{tabular}
+
+\vspace{1cm} % Odstęp między tabelami
+
+\begin{tabular}{ll} % 'll' wyrównuje obie kolumny do lewej, co przy skrótach wygląda lepiej
+	ADC  & (ang. \textit{Analog-to-Digital Converter}) przetwornik analogowo-cyfrowy \\
+	DOF  & (ang. \textit{Degrees of Freedom}) stopnie swobody \\
+	IoT  & (ang. \textit{Internet of Things}) internet rzeczy \\
+	PLC  & (ang. \textit{Programmable Logic Controller}) programowalny sterownik logiczny \\
+\end{tabular}
+
+
+% Pusta strona po stronie Wykaz symboli i skrótów
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+% ---------------- SPIS RYSUNKÓW ----------------
+
+\listoffigures   
+
+% Pusta strona po stronie Spis rysunków
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+
+% ---------------- SPIS TABEL ----------------
+
+\listoftables  
+
+% Pusta strona po stronie Spis tabel
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+
+% ---------------- SPIS ZAŁĄCZNIKÓW ----------------
+
+% Spis załączników - jak nie ma załączników, to zakomentować lub usunąć
+\chapter*{Spis załączników}
+\addcontentsline{toc}{chapter}{Spis załączników} % Opcjonalnie: dodaje wykaz do spisu treści
+
+\begin{enumerate}
+	\item Analiza błędów -- pełny skrypt źródłowy zawierający zaimplementowane funkcje testowe oraz procedurę numerycznej analizy błędów metody trapezów.
+	
+	\item Specyfikacja techniczna stacji roboczej wykorzystanej w pracy.
+	
+	\item Dodatkowe zdjęcia stanowiska badawczego.
+	
+	%\item Dokumentacja katalogowa -- noty aplikacyjne producenta dotyczące wykorzystanego czujnika momentu obrotowego.
+\end{enumerate}
+
+% Pusta strona po stronie Literatura
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+
+
+% --- ROZPOCZĘCIE SEKCJI ZAŁĄCZNIKÓW ---
+\appendix
+\setcounter{chapter}{0} % <--- Wymusza start numeracji od zera
+% Zmiana słowa "Dodatek" na "Załącznik"
+\renewcommand{\appendixname}{Załącznik}
+
+% Zmiana formatu numeracji z liter (A, B, C) na cyfry (1, 2, 3)
+\renewcommand{\thechapter}{\arabic{chapter}}
+
+
+\chapter*{Załącznik 1\\Analiza błędów}
+\refstepcounter{chapter}
+
+% To jest unikalny znacznik tego załącznika; w tekście pracy można odwołać się do konkretnego załącznika
+\label{zal:analiza_bledow} 
+
+% Tutaj wpisujemy treść pierwszego załącznika lub wklejamy kod przez \lstinputlisting
+
+Zarządzenie Rektora PW~\cite{rektorPW2022} ściśle definiuje układ dokumentu, wskazując, że przedostatnim jego elementem jest „Spis załączników”, w którym  wymienia się te materiały, które są fizycznie dołączone na samym końcu dokumentu pracy dyplomowej.
+
+Poniżej znajduje się pełny skrypt zawierający funkcje testowe oraz procedurę analizy błędów.
+
+% Pusta strona po stronie Literatura
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+
+\chapter*{Załącznik 2\\Specyfikacja techniczna stacji roboczej wykorzystanej w pracy}
+\refstepcounter{chapter}
+\label{zal:specyfikacja} % To jest unikalny znacznik tego załącznika
+
+\begin{table}[htbp]
+	\centering 
+	\label{tab:specyfikacja_komputera}
+	\begin{tabular}{|l|p{9.5cm}|} 
+		\hline % Pozioma linia na samej górze
+		\textbf{Komponent} & \textbf{Parametry techniczne / Model} \\
+		\hline % Pozioma linia pod nagłówkiem
+		Procesor (CPU) & Intel Core i7-14700K (20 rdzeni, 28 wątków, taktowanie do 5.6 GHz) \\
+		\hline
+		Pamięć RAM & 64 GB DDR5 Kingston Fury (2 $\times$ 32 GB, 6000 MHz, CL30) \\
+		\hline
+		Karta graficzna (GPU) & NVIDIA GeForce RTX 4080 Super (16 GB GDDR6X, 10240 rdzeni CUDA) \\
+		\hline
+		Dysk twardy & SSD Samsung 990 Pro 2 TB NVMe M.2 PCIe Gen4 (odczyt do 7450 MB/s) \\
+		\hline
+		Płyta główna & MSI MAG Z790 TOMAHAWK WIFI \\
+		\hline
+		Zasilacz & Corsair RM850x 850W (Certyfikat 80 Plus Gold) \\
+		\hline
+		System operacyjny & Linux Ubuntu 24.04 LTS / Windows 11 Pro (64-bit) \\
+		\hline
+		Środowisko i biblioteki & Python 3.12, CUDA Toolkit 12.4, PyTorch 2.3, MATLAB R2024a \\
+		\hline % Pozioma linia na samym dole
+	\end{tabular}
+\end{table}
+
+% Pusta strona po stronie Literatura
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+
+\chapter*{Załącznik 3\\Dodatkowe zdjęcia stanowiska badawczego}
+\refstepcounter{chapter}
+\label{zal:zdjecia} % To jest unikalny znacznik tego załącznika
+
+W niniejszym załączniku zgromadzono dodatkowe materiały graficzne, dokumentację fotograficzną stanowiska badawczego oraz szczegółowe wykresy przebiegów, które ze względu na swoje znaczne rozmiary i pomocniczy charakter nie zostały włączone bezpośrednio do zasadniczej części pracy. Zamieszczone poniżej materiały stanowią bezpośrednie uzupełnienie opisów eksperymentów zawartych w rozdziale~\ref{ch:wyniki} i umożliwiają pełniejszą, szczegółową weryfikację poprawności działania zaimplementowanego systemu.
+
+
+\end{document}
