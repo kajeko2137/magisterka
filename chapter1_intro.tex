@@ -1,190 +1,27 @@
-% --- Plik: chapter1_intro.tex ---
+\chapter{Istniejące algorytmy planowania czasu procesora w nowoczesnych systemach}
+\label{ch:wprowadzenie}
 
-\chapter{Wprowadzenie do szablonu i wytyczne edytorskie}
-\label{ch:wprowadzenie} % To jest unikalny znacznik tego rozdziału
+\subsection{System Linux i architektura EEVDF}
+W nowoczesnych wersjach jądra systemu Linux, domyślnym algorytmem planowania (ang. \textit{scheduler}) dla procesów standardowych jest algorytm Earliest Eligible Virtual Deadline First (EEVDF). Zastąpił on wieloletni standard znany jako Completely Fair Scheduler (CFS), rozwiązując fundamentalny problem balansu między sprawiedliwością przydziału czasu a opóźnieniami w obsłudze zadań interaktywnych \cite{1}, \cite{38}. 
 
-Przygotowanie pracy dyplomowej magisterskiej na Wydziale Mechatroniki Politechniki Warszawskiej nakłada na autora obowiązek zachowania najwyższych standardów merytorycznych, metodologicznych oraz edytorskich.
-
-Prezentowany szablon został opracowany w celu optymalizacji procesu składu tekstu i zapewnienia spójności typograficznej w całym dokumencie. Wszystkie parametry geometrii strony, krojów pism są w pełni zgodne z obowiązującym Zarządzeniem Rektora Politechniki Warszawskiej w sprawie zasad przygotowywania prac dyplomowych~\cite{rektorPW2022}. W przeciwieństwie do tradycyjnych edytorów, system \LaTeX{} oddziela warstwę logiczną tekstu od jego prezentacji wizualnej, co pozwala na pełną koncentrację na aspektach badawczych i inżynierskich.
-
-\section{Architektura i organizacja plików szablonu}
-
-W celu zapewnienia najwyższej czytelności, łatwości zarządzania tekstem oraz zgodnie z powszechnymi zaleceniami edytorskimi w zakresie cyfrowego składu publikacji, projekt został zaimplementowany w sposób modułowy. Zamiast jednego, wielostronicowego dokumentu, struktura szablonu została podzielona na kilka mniejszych, wyspecjalizowanych plików tekstowych:
-
+Działanie algorytmu EEVDF opiera się na ścisłych podstawach matematycznych \cite{15} i operuje na kilku kluczowych wartościach przypisywanych każdemu zadaniu:
 \begin{itemize}
-	\item \textbf{\texttt{thesis-main.tex}:} stanowi główny plik sterujący i rdzeń całego projektu. To z tego poziomu uruchamiany jest proces kompilacji dokumentu do formatu PDF.
-	\item \textbf{\texttt{thesis-packages.tex}:} miejsce, do którego przeniesiono globalną konfigurację środowiska, w tym deklaracje pakietów zewnętrznych oraz definicje stylów formatowania.
-	\item \textbf{\texttt{thesis-macros.tex}:} dedykowany plik przeznaczony na autorskie definicje komend, skrótów oraz makr ułatwiających automatyzację powtarzalnych operacji tekstowych.
+	\item \textbf{Żądany kwant czasu} (\textit{requested time slice / slice})
+	\item \textbf{Wirtualny czas wykonania} (\textit{virtual runtime / vruntime})
+	\item \textbf{Opóźnienie} (\textit{lag})
+	\item \textbf{Priorytet} (\textit{priority / weight})
 \end{itemize}
 
-Dobrą praktyką inżynierską jest separacja treści merytorycznej poprzez umieszczanie każdego z głównych rozdziałów pracy w osobnym, niezależnym pliku o rozszerzeniu \texttt{.tex}. W ramach niniejszego szablonu zastosowano ustrukturyzowane   nazewnictwo plików, dzielące pracę na następujące ogólne moduły:
+Kiedy nowe lub powracające ze stanu uśpienia zadanie trafia do kolejki procesów gotowych, otrzymuje bazowy kwant czasu (\textit{slice}). Wartość ta oparta jest na zmiennych konfiguracyjnych systemu (np. \texttt{sysctl\_sched\_base\_slice}) i jest dynamicznie skalowana na podstawie wagi procesu (wynikającej z jego priorytetu \textit{nice}) \cite{19}, \cite{26}. Następnie, gdy zadanie zaczyna być wykonywane przez procesor, jego wirtualny czas wykonania (\texttt{vruntime}) stale rośnie. Wartość ta odzwierciedla rzeczywisty czas spędzony na procesorze, znormalizowany przez wagę zadania. Zliczanie tego czasu opiera się na precyzyjnych licznikach sprzętowych procesora (np. w architekturze amd64), jednak sama aktualizacja wirtualnego czasu i struktur danych jest w całości realizowana programowo przez jądro systemu operacyjnego, zazwyczaj podczas obsługi przerwań zegarowych \cite{18}, \cite{19}.
 
-\begin{itemize}
-	\item \textbf{Wstęp lub Wprowadzenie (\texttt{chapter1\_intro.tex}):} otwierający pracę rozdział o charakterze wprowadzającym w zdefiniowaną tematykę badawczą. Służy on sformułowaniu tezy, celów, zakresu projektu inżynierskiego oraz uzasadnieniu podjęcia danego problemu naukowo-technicznego.
-	
-	\item \textbf{Rozdziały merytoryczne (\texttt{chapter2\_background.tex}, \texttt{chapter3\_design.tex},\\ \texttt{chapter4\_experiments.tex}):} zasadnicza część pracy, podzielona w zależności od specyfiki pracy na odpowiednie, spójne bloki tematyczne (zazwyczaj od dwóch do kilku rozdziałów). W tych modułach autor szczegółowo opisuje przegląd literatury przedmiotu, przyjętą metodologię badawczą, strukturę projektową urządzeń oraz praktyczną realizację i walidację zadanego tematu inżynierskiego.
-	
-	\item \textbf{Podsumowanie lub Wnioski (\texttt{chapter5\_conclusions.tex}):} zamykająca merytoryczną część pracy sekcja, w której następuje synteza i podsumowanie osiągniętych rezultatów. Autor dokonuje tu krytycznej oceny osiągniętych wyników, weryfikuje stopień spełnienia założeń początkowych oraz nakreśla perspektywy i kierunki dalszego rozwoju podjętych badań.
-\end{itemize}
+Na bazie początkowo przypisanego kwantu czasu oraz \texttt{vruntime}, system wylicza wirtualny termin zakończenia (\textit{virtual deadline}). Reprezentuje on moment, do którego proces powinien w idealnych warunkach skonsumować swój przydzielony czas. Algorytm na bieżąco oblicza również opóźnienie (\textit{lag}), będące różnicą pomiędzy czasem, jaki zadanie powinno było otrzymać w idealnym, proporcjonalnym modelu podziału czasu (tzw. \textit{fluid-flow model}), a czasem, który faktycznie wykorzystało. Jeżeli wartość \textit{lag} jest mniejsza od zera, oznacza to, że proces otrzymał więcej czasu procesora niż pozostałe procesy rywalizujące o czas procesora. W takim scenariuszu proces traci kwalifikowalność (\textit{ineligible}) i jest kategorycznie wykluczony z możliwości przydziału sprzętowego do momentu, aż ogólny upływ czasu w systemie sprawi, że jego \textit{lag} ponownie wzrośnie do wartości nieujemnej \cite{1}, \cite{15}.
 
-Pliki te są dynamicznie integrowane z plikiem głównym za pomocą instrukcji strukturalnych \texttt{\textbackslash include\{\dots\}}. W przypadku kompletnych kodów źródłowych, rozbudowanych skryptów czy pełnych pakietów oprogramowania, w celu zachowania przejrzystości pracy nie należy umieszczać ich w rozdziałach merytorycznych. Pełne implementacje programistyczne należy zamieścić w sekcji załączników na samym końcu pracy (odnotowując ten fakt w \textit{Wykazie załączników}) lub wgrać w formie cyfrowej bezpośrednio do systemu USOS APD (Archiwum Prac Dyplomowych) jako oficjalny, spakowany załącznik do pracy.
+\subsection{Wybór procesu i struktury danych}
+Działanie każdego planisty w nowoczesnych systemach operacyjnych opiera się na sprzętowym mechanizmie przerwań czasowych (ang. \textit{timer interrupts}). Ponieważ procesor nie może jednocześnie wykonywać własnego kodu schedulera oraz kodu aplikacji użytkownika, wbudowany kontroler przerwań z dużą częstotliwością wstrzymuje wykonywane zadanie, przekazując sterowanie do jądra systemu \cite{13}. Daje to algorytmowi możliwość przeliczenia wskaźników i, w razie potrzeby, wywłaszczenia procesu.
 
+Scheduler EEVDF przechowuje informacje o aktywnych procesach w zrównoważonym drzewie czerwono-czarnym (ang. \textit{Augmented Red-Black Tree}). W przeciwieństwie do naiwnego podejścia, drzewo to nadal sortuje węzły na podstawie wirtualnego czasu wykonania (\texttt{vruntime}), co układa zadania od lewej do prawej. Kluczową innowacją jest jednak rozszerzenie (\textit{augmentation}) każdego węzła o dodatkowe pole \texttt{min\_deadline}, które przechowuje najkrótszy termin zakończenia z danego węzła i wszystkich jego potomków. Dzięki temu struktura działa jednocześnie jako drzewo wyszukiwania binarnego oraz jako kopiec (min-heap) dla wartości \textit{deadline}. Architektura ta pozwala systemowi w optymalnym czasie $O(\log n)$ odrzucić całe poddrzewa i natychmiast odnaleźć zadanie o najwcześniejszym \textit{virtual deadline}, które jednocześnie spełnia warunek kwalifikowalności ($lag \ge 0$) i to ono zostaje wybrane do działania na procesorze \cite{4}, \cite{19}.
 
-\section{Zaimplementowane wskazówki i wymagania edytorskie}
+\subsection{Mechanizm Run to Parity}
+Algorytm EEVDF w swojej czystej, teoretycznej postaci zakłada wyidealizowany model maszyny obliczeniowej. W rzeczywistości fizyczne procesory opierają swoją wydajność na hierarchii pamięci podręcznej (Cache L1/L2/L3), która przechowuje dane powiązane z aktualnie wykonywanym procesem. Niezmodyfikowany mechanizm doboru zadań oparty wyłącznie na \textit{deadline'ach} prowadziłby do zjawiska tzw. \textit{over-scheduling} – zbyt częstych zmian aktualnie działającego zadania. Skutkowałoby to znacznymi stratami cykli procesora na ciągłą wymianę linii pamięci podręcznej (\textit{cache miss}) oraz narzutem związanym z przełączaniem kontekstu.
 
-Niniejszy dokument testowy pełni jednocześnie funkcję interaktywnego poradnika. W jego treści znajdują się szczegółowe wskazówki oraz gotowe szablony implementacji wymagań edytorskich, sformułowane na podstawie zasad przygotowywania prac dyplomowych~\cite{rektorPW2022}. Wzorcowe fragmenty obejmują w szczególności:
-
-
-\begin{itemize}
-	\item \textbf{Ogólną strukturę i formatowanie tekstu:} zasady logicznego podziału na sekcje, formatowania akapitów oraz zachowania odpowiedniej interlinii i geometrii marginesów.
-	
-	\item \textbf{Eliminację błędów typograficznych:} przykłady poprawnego stosowania twardych spacji (\texttt{\textasciitilde}), zapobiegających pozostawianiu samotnych spójników i krótkich przyimków na końcu linii tekstu.
-	
-	\item \textbf{Struktury wyliczeniowe:} wykorzystanie odpowiedniej składni do przejrzystej i jednolitej prezentacji danych technicznych oraz procedur badawczych.
-	
-	\item \textbf{Składnię matematyczną:} standardy zapisu wzorów z zachowaniem automatycznej, ciągłej numeracji w skali całej pracy.
-	
-	\item \textbf{Struktury tabelaryczne:} projektowanie tabel do prezentacji danych i wyników eksperymentalnych, w tym techniki selektywnego kolorowania wierszy.
-	
-	\item \textbf{Rysunki:} wytyczne dotyczące osadzania rysunków, schematów i grafik wraz z systemem automatycznego pozycjonowania i generowania podpisów oraz wskazywania źródeł.
-	
-	\item \textbf{Kody źródłowe i skrypty:} metody integracji tekstu pracy z prezentacją programów (np. w językach C/C++, Python lub środowisku MATLAB) z automatycznym kolorowaniem składni wraz z translacją polskich znaków diakrytycznych.
-	
-	\item \textbf{Dynamiczne odwołania krzyżowe:} przykłady niezawodnego powiązania tekstu głównego z obiektami zewnętrznymi za pomocą komend \texttt{\textbackslash label} i \texttt{\textbackslash ref}, co gwarantuje aktualność odsyłaczy niezależnie od reorganizacji struktury rozdziałów.
-\end{itemize}
-
-\section{Wymagana konfiguracja kompilatora dokumentu - XeLaTeX}
-
-\noindent \textbf{UWAGA! Istotny krok konfiguracyjny dla kompilacji tekstu:} niniejszy szablon wykorzystuje nowoczesny silnik składu \textbf{XeLaTeX} zamiast klasycznego systemu \textit{pdfLaTeX}. Zapewnia on natywną obsługę zaawansowanych czcionek systemowych OpenType/TrueType (w tym wymaganych krojów Adagio Slab) oraz bezbłędne kodowanie znaków UNICODE (UTF-8). 
-
-Większość programów zainstalowanych lokalnie na komputerze (np. TeXstudio, Texmaker) jest domyślnie skonfigurowana do obsługi starszego programu \textit{pdfLaTeX}. Próba kompilacji szablonu bez zmiany tych ustawień zakończy się serią błędów krytycznych, uniemożliwiających prawidłowe wygenerowanie pliku PDF (np. komunikatami o braku dostępu do fontów systemowych). 
-
-Przed przystąpieniem do budowania dokumentu, \textbf{należy bezwzględnie zmienić domyślny kompilator w ustawieniach swojego edytora}. Poniżej znajduje się instrukcja krok po kroku dla najpopularniejszych programów:
-
-\begin{enumerate}
-	\item \textbf{Edytor TeXstudio (zalecany dla systemów Windows/Linux):}
-	\begin{itemize}
-		\item W górnym menu programu przejdź do: \textit{Opcje} $\rightarrow$ \textit{Konfiguracja TeXstudio}.
-		\item W panelu po lewej stronie wybierz zakładkę \textbf{Zbuduj} (Build).
-		\item Odszukaj pozycję \textbf{Domyślny kompilator} (Default Compiler).
-		\item Zmień domyślną wartość z \texttt{PdfLaTeX} na \textbf{\texttt{XeLaTeX}}.
-		\item Zatwierdź zmiany klikając przycisk \textit{OK}.
-	\end{itemize}
-	
-	\item \textbf{Edytor Texmaker:}
-	\begin{itemize}
-		\item W górnym menu programu przejdź do: \textit{Opcje} $\rightarrow$ \textit{Konfiguracja Texmaker}.
-		\item W panelu po lewej stronie wybierz zakładkę \textbf{Szybkie kompilowanie} (Quick Build).
-		\item Zaznacz opcję opisaną jako \textbf{\texttt{XeLaTeX + View PDF}}.
-		\item Zatwierdź zmiany klikając przycisk \textit{OK} (od tej pory główny skrót kompilacji F1 będzie automatycznie używał właściwego silnika).
-	\end{itemize}
-	
-	\item \textbf{Platforma Overleaf (chmura):}
-	\begin{itemize}
-		\item W lewym górnym rogu ekranu roboczego kliknij przycisk \textbf{Menu} (ikona zielonego segregatora).
-		\item W sekcji \textit{Settings} (Ustawienia) odszukaj pozycję \textbf{Compiler}.
-		\item Rozwiń listę i zmień domyślne \textit{pdfLaTeX} na \textbf{\textit{XeLaTeX}}.
-		\item Kliknij dowolne miejsce na ekranie, aby zamknąć panel – platforma zapamięta to ustawienie globalnie dla danego projektu.
-	\end{itemize}
-\end{enumerate}
-
-\section{Wymagana konfiguracja kompilatora dokumentu - Biber}
-
-\noindent \textbf{UWAGA! Istotny krok konfiguracyjny dla bibliografii:} niniejszy szablon wykorzystuje nowoczesny pakiet \texttt{biblatex} z silnikiem sortującym \textbf{Biber}. Zapewnia on bezbłędną obsługę polskich znaków diakrytycznych oraz w pełni automatyczne formatowanie i sortowanie literatury. 
-
-Większość programów zainstalowanych lokalnie na komputerze (np. TeXstudio, Texmaker) jest domyślnie skonfigurowana do obsługi starego programu \textit{BibTeX}. Próba kompilacji bibliografii bez zmiany tych ustawień zakończy się serią błędów (np. \textit{„This is BibTeX... I found no \textbackslash citation commands”}). 
-
-Przed przystąpieniem do generowania spisu literatury, \textbf{należy bezwzględnie zmienić domyślne narzędzie w ustawieniach swojego edytora}. Poniżej znajduje się instrukcja krok po kroku dla najpopularniejszych programów:
-
-\begin{enumerate}
-	\item \textbf{Edytor TeXstudio (zalecany dla systemów Windows/Linux):}
-	\begin{itemize}
-		\item W górnym menu programu przejdź do: \textit{Opcje} $\rightarrow$ \textit{Konfiguracja TeXstudio}.
-		\item W panelu po lewej stronie wybierz zakładkę \textbf{Zbuduj} (Build).
-		\item Odszukaj pozycję \textbf{Domyślne narzędzie bibliografii} (Default Bibliography Tool).
-		\item Zmień domyślną wartość z \texttt{BibTeX} na \textbf{\texttt{Biber}}.
-		\item Zatwierdź zmiany klikając przycisk \textit{OK}.
-	\end{itemize}
-	
-	\item \textbf{Edytor Texmaker:}
-	\begin{itemize}
-		\item W górnym menu programu przejdź do: \textit{Opcje} $\rightarrow$ \textit{Konfiguracja Texmaker}.
-		\item W zakładce \textbf{Komendy} (Commands) odszukaj pole tekstowe oznaczone jako \textbf{Bibtex}.
-		\item Zmień domyślny wpis \texttt{bibtex \%.aux} na: \textbf{\texttt{biber \%}}
-		\item Zatwierdź zmiany klikając przycisk \textit{OK}.
-	\end{itemize}
-	
-	\item \textbf{Platforma Overleaf (chmura):}
-	\begin{itemize}
-		\item Jeśli piszesz pracę na platformie Overleaf, nie musisz wykonywać żadnych kroków. Serwer automatycznie wykrywa deklarację \texttt{backend=biber} w pakietach i sam dobiera właściwy program kompilujący.
-	\end{itemize}
-\end{enumerate}
-
-\noindent \textbf{Praktyczna wskazówka dotycząca kompilacji:} po dodaniu nowego źródła do pliku \texttt{.bib} lub umieszczeniu nowego cytowania w tekście, poprawne wygenerowanie literatury w dokumencie PDF \textbf{wymaga w praktyce dwu- lub trzykrotnego skompilowania pracy}. Cały proces musi przebiegać w ściśle określonej sekwencji narzędzi:
-\begin{center}
-	\texttt{PdfLaTeX} $\rightarrow$ \texttt{Biber} $\rightarrow$ \texttt{PdfLaTeX}
-\end{center}
-Oznacza to konieczność wykonania następujących kroków:
-\begin{enumerate}
-	\item \textbf{Pierwsza kompilacja (\texttt{PdfLaTeX}):} system skanuje tekst i tworzy listę z użytymi cytowaniami. Na tym etapie w pliku PDF zamiast numerów pojawią się tymczasowe znaki zapytania: \texttt{[?]}.
-	
-	\item \textbf{Przetwarzanie bazy (\texttt{Biber}):} program pobiera stworzoną listę, leci do pliku \texttt{.bib}, wyciąga z niego odpowiednie książki i układa je w porządku alfabetycznym.
-	
-	\item \textbf{Druga kompilacja (\texttt{PdfLaTeX}):} system ponownie czyta dokument, podmienia znaki \texttt{[?]} na właściwe numery i buduje ostateczny spis literatury.
-\end{enumerate}
-
-\noindent \textit{Uwaga automatyzacyjna:} jeśli piszesz pracę na platformie Overleaf lub w programie TeXstudio masz poprawnie skonfigurowane narzędzie \textit{„Zbuduj i wyświetl”} (domyślnie pod klawiszem \texttt{F5}), programy te są na tyle sprytne, że po jednym kliknięciu same wykonają całą tę potrójną sekwencję w tle. Jeśli jednak zauważysz, że w tekście nadal wiszą znaki zapytania \texttt{[?]} lub numery są niepoprawne, musisz ręcznie wymusić powyższe 3 kroki.
-
-\subsection{Instalacja wymaganych krojów pisma (czcionek)}
-
-\noindent \textbf{UWAGA! Krok obowiązkowy przed pierwszą kompilacją:} oficjalny System Identyfikacji Wizualnej Politechniki Warszawskiej wymaga stosowania dedykowanych krojów pisma: \textbf{Adagio Slab} (do nagłówków oraz strony tytułowej) oraz \textbf{Adagio Slab Light} (do tekstu głównego pracy). Pliki tych czcionek (w formacie \texttt{.otf}) zostały dostarczone wraz z niniejszym szablonem i znajdują się \textbf{bezpośrednio w folderze głównym szablonu}.
-
-Przed rozpoczęciem jakichkolwiek prac edycyjnych, \textbf{należy bezwzględnie zainstalować te czcionki w swoim systemie operacyjnym}, aby były one poprawnie mapowane przez silnik XeLaTeX. Pominięcie tego kroku lub usunięcie plików czcionek z katalogu roboczego spowoduje wystąpienie błędu krytycznego typu \textit{font-not-found}, co całkowicie zablokuje proces generowania pliku PDF.
-
-Poniżej znajduje się instrukcja prawidłowego przygotowania środowiska:
-
-\begin{enumerate}
-	\item \textbf{Lokalizacja plików czcionek:}
-	\begin{itemize}
-		\item Otwórz główny katalog projektu\\ (ten, w którym znajduje się plik główny pracy \texttt{thesis-main.tex}).
-		\item Upewnij się, że znajdują się tam pliki czcionek, np. \texttt{Adagio\_Slab-Regular.otf} oraz \texttt{AdagioS\_lab-Light.otf}.
-	\end{itemize}
-	
-	\item \textbf{Instalacja w zależności od systemu operacyjnego:}
-	\begin{itemize}
-		\item \textbf{System Windows:} zaznacz oba pliki czcionek, kliknij na nie prawym przyciskiem myszy i wybierz opcję \textbf{Zainstaluj} (rekomendowane: \textit{Zainstaluj dla wszystkich użytkowników} -- zapobiega to problemom z uprawnieniami środowiska \TeX).
-		\item \textbf{System macOS:} kliknij dwukrotnie lewym przyciskiem myszy na każdy z plików czcionek. W oknie systemowej aplikacji \textit{Album z czcionkami} (Font Book) kliknij przycisk \textbf{Zainstaluj}.
-		\item \textbf{System Linux:} skopiuj pliki czcionek do katalogu użytkownika \texttt{\textasciitilde/.local/share/fonts/} (lub systemowego \texttt{/usr/share/fonts/}), a następnie odśwież pamięć podręczną fontów, wykonując w terminalu polecenie: \texttt{fc-cache -f -v}.
-	\end{itemize}
-	
-	\item \textbf{Restart środowiska programistycznego (Kluczowy krok):}
-	\begin{itemize}
-		\item Jeśli podczas instalacji czcionek Twój edytor (\textit{TeXstudio}, \textit{Texmaker} itp.) był uruchomiony, \textbf{musisz go całkowicie zamknąć i włączyć ponownie}.
-		\item Silnik XeLaTeX skanuje i indeksuje zasoby czcionek systemowych wyłącznie w momencie startu edytora. Bez restartu program nie zauważy nowo dodanych plików i nadal będzie zgłaszał błąd kompilacji.
-	\end{itemize}
-\end{enumerate}
-
-
-\section{Adaptacja szablonu dla początkujących}
-
-Dla dyplomantów, którzy nie posiadają wcześniejszego doświadczenia z systemem \LaTeX{}, niniejszy szablon został zaprojektowany jako strukturalny zbiór gotowych elementów referencyjnych. Implementacja poszczególnych komponentów wizualnych nie wymaga zaawansowanej znajomości reguł programowania dokumentów i opiera się na powtarzalnej sekwencji trzech kroków proceduralnych:
-
-\begin{enumerate}
-	\item[I.] \textbf{Znajdź wzorzec:} przeglądaj wygenerowany plik PDF i znajdź element, którego akurat potrzebujesz w swoim rozdziale (może to być konkretny układ wzorów matematycznych, tabela pomiarowa, rysunek czy listing kodu).
-	
-	\item[II.] \textbf{Skopiuj gotowy kod:} otwórz odpowiedni plik przykładowego rozdziału w edytorze, odszukaj ten element w kodzie źródłowym i skopiuj go do schowka.
-	
-	\item[III.] \textbf{Wklej i podmień dane:} wklej skopiowany blok kodu do pliku ze swoim własnym rozdziałem (np. do \texttt{rozdzial3\_design.tex}) i po prostu podmień przykładowy tekst, wartości liczbowe czy podpisy na swoje własne dane inżynierskie.
-\end{enumerate}
-
-Zastosowanie opisanego podejścia, pozwala na stworzenie dokumentu o idealnym, profesjonalnym wyglądzie. Jednocześnie umożliwia ono intuicyjne i naturalne przyswajanie zasad składu dokumentacji \LaTeX{} bezpośrednio w trakcie procesu redagowania pracy dyplomowej. 
-
-
-\section{Informacja o szablonie}
-
-
-Niniejszy szablon pracy dyplomowej powstał na podstawie wytycznych określonych w załączniku nr 1 do zarządzenia nr 4/2022 Rektora Politechniki Warszawskiej (Wymogi edytorskie dla prac dyplomowych w Politechnice Warszawskiej)~\cite{rektorPW2022}.
-
-Opracowaniem ogólnej struktury oraz kodu źródłowego szablonu zajął się Igor Ostrowski, natomiast za przygotowanie merytorycznej treści w poszczególnych rozdziałach odpowiada Zofia Łabęda-Grudziak. W razie pojawienia się pytań lub wątpliwości, autorzy pozostają do dyspozycji pod adresami e-mail: \href{mailto:igor.ostrowski@pw.edu.pl}{\texttt{igor.ostrowski@pw.edu.pl}} lub \href{mailto:[zofia.grudziak@pw.edu.pl}{\texttt{zofia.grudziak@pw.edu.pl}}.
-
-
+Aby rozwiązać ten problem, w systemie Linux wprowadzono mechanizm \textit{Run to Parity} \cite{26}. Zgodnie z tą regułą, proces, który już przejął kontrolę nad jednostką obliczeniową, z reguły nie zostaje wywłaszczony przez inne, standardowe zadania posiadające wcześniejszy \textit{virtual deadline}, dopóki jego własne opóźnienie (\textit{lag}) nie spadnie do zera. Dopiero gdy proces "wyrówna" swój dług wobec systemu (osiągając parytet), zdejmuje się z niego ochronę, pozwalając na przejęcie procesora przez kolejne kwalifikujące się zadanie. Mechanizm ten gwarantuje dłuższe, nieprzerwane odcinki pracy pojedynczego wątku, co maksymalizuje wykorzystanie pamięci podręcznej i zwiększa ogólną przepustowość sprzętu (throughput), nie naruszając jednocześnie długoterminowych matematycznych gwarancji sprawiedliwości algorytmu \cite{38}.

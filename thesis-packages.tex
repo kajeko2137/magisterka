@@ -1,11 +1,37 @@
 % --- Plik: thesis-packages.tex ---
 
-%% Do kompilacji używaj XeLaTeX!
+%% Do kompilacji używaj XeLaTeX lub LuaLaTeX (silnik musi obsługiwać fontspec).
 \usepackage{fontspec}
 
-% Domyślna czcionka dokumentu (zamiennik dla Helvetica wg wytycznych)
-\setmainfont{Arial}
-\setsansfont{Arial}
+% --- Domyślna czcionka dokumentu -------------------------------------------
+% Wymagany jest Arial. Jeśli nie jest zainstalowany w systemie (typowe na
+% Linuksie), używamy czcionki metrycznie zgodnej z Arial, żeby układ tekstu
+% pozostał identyczny: Liberation Sans (albo Arimo). Dzięki temu dokument
+% kompiluje się poprawnie na każdym komputerze.
+\IfFontExistsTF{Arial}{%
+  \setmainfont{Arial}%
+  \setsansfont{Arial}%
+}{%
+  \IfFontExistsTF{Liberation Sans}{%
+    \setmainfont{Liberation Sans}%
+    \setsansfont{Liberation Sans}%
+    \PackageWarning{thesis-packages}{Arial niedostepny - uzywam
+      metrycznie zgodnego Liberation Sans. Zainstaluj Arial
+      (ttf-mscorefonts-installer) dla pelnej zgodnosci z wytycznymi}%
+  }{%
+    \IfFontExistsTF{Arimo}{%
+      \setmainfont{Arimo}%
+      \setsansfont{Arimo}%
+      \PackageWarning{thesis-packages}{Arial niedostepny - uzywam
+        metrycznie zgodnego Arimo. Zainstaluj Arial
+        (ttf-mscorefonts-installer) dla pelnej zgodnosci z wytycznymi}%
+    }{%
+      \PackageWarning{thesis-packages}{Brak czcionki Arial i jej zamiennikow
+        (Liberation Sans / Arimo)! Uzywam domyslnej czcionki bezszeryfowej -
+        zainstaluj Arial (ttf-mscorefonts-installer)}%
+    }%
+  }%
+}
 \renewcommand{\familydefault}{\sfdefault}
 
 % Definiowanie niestandardowych czcionek uczelnianych

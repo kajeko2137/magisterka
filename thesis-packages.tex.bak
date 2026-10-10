@@ -1,0 +1,138 @@
+% --- Plik: thesis-packages.tex ---
+
+%% Do kompilacji używaj XeLaTeX!
+\usepackage{fontspec}
+
+% Domyślna czcionka dokumentu (zamiennik dla Helvetica wg wytycznych)
+\setmainfont{Arial}
+\setsansfont{Arial}
+\renewcommand{\familydefault}{\sfdefault}
+
+% Definiowanie niestandardowych czcionek uczelnianych
+% (Nazwy w nawiasach klamrowych muszą odpowiadać tym zainstalowanym w Twoim systemie)
+\newfontfamily\adagioslab{Adagio_Slab-Regular}
+\newfontfamily\adagioslablight{Adagio_Slab-Light}
+
+\usepackage{polyglossia}
+\setdefaultlanguage{polish}
+\setotherlanguage{english}
+
+% Ustawienia marginesów: wewnętrzny 30 mm, zewnętrzny 20 mm, górny i dolny 25 mm [3]
+\usepackage[inner=30mm, outer=20mm, top=25mm, bottom=25mm]{geometry}
+
+% Interlinia 1.15 [3]
+\usepackage{setspace}
+\setstretch{1.15}
+
+% Pakiety dodatkowe
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage{xcolor}    % Pakiet do obsługi kolorów
+\usepackage{hyperref}  % Pakiet do obsługi hiperłączy
+
+\hypersetup{
+	colorlinks=true,   % Włącza kolorowanie tekstu zamiast rysowania ramek
+	linkcolor=black,   % Odnośniki wewnętrzne (np. spis treści) pozostają czarne do druku
+	citecolor=black,   % Odnośniki do bibliografii pozostają czarne
+	urlcolor=blue      % Adresy URL i e-mail będą wyraźnie niebieskie
+	%urlcolor=blue!80!black
+}
+
+
+\usepackage{titlesec}
+\usepackage{caption} % Do formatowania podpisów
+\usepackage{booktabs}
+\usepackage[table]{xcolor} % Włącza zaawansowane kolorowanie tabel
+
+% Pakiety do obsługi zaawansowanej matematyki
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+
+\usepackage{listings} % Do obsługi kodów źródłowych programów (np. Python, C++, MATLAB)
+% Kolory do kodów Pythona w Jupyter Notebook
+\definecolor{ju_keyword}{rgb}{0.0, 0.5, 0.0}
+\definecolor{ju_string}{rgb}{0.73, 0.13, 0.13}
+\definecolor{ju_comment}{rgb}{0.25, 0.50, 0.50}
+\definecolor{ju_builtin}{rgb}{0.0, 0.30, 0.60}
+\definecolor{ju_func}{rgb}{0.0, 0.0, 1.0}
+\definecolor{ju_tlo}{rgb}{0.99, 0.99, 0.99}
+\definecolor{ju_linia}{rgb}{0.85, 0.85, 0.85}
+\lstset{
+	language=Python,
+	alsoletter={_},
+	backgroundcolor=\color{ju_tlo},
+	basicstyle=\ttfamily\small\color{black},
+	keywordstyle=\bfseries\color{ju_keyword},
+	commentstyle=\itshape\color{ju_comment},
+	stringstyle=\color{ju_string},
+	morekeywords=[2]{print,len,range,str,int,float,list,dict,set,tuple,zip,enumerate,abs,min,max,sum},
+	keywordstyle=[2]\color{ju_builtin},
+	emph={metoda_trapezow,metoda_simpsona,wykres_bledow,moja_funkcja},
+	emphstyle=\color{ju_func},
+	frame=single,
+	rulecolor=\color{ju_linia},
+	numbers=left,
+	numberstyle=\tiny\color{gray!70},
+	breaklines=true,
+	columns=flexible,
+	keepspaces=true,
+	xleftmargin=15pt,
+	xrightmargin=5pt,
+	literate={ą}{{\k{a}}}1 {ć}{{\'c}}1 {ę}{{\k{e}}}1 {ł}{{\l}}1 {ń}{{\'n}}1 {ó}{{\'o}}1 {ś}{{\'s}}1 {ź}{{\'z}}1 {ż}{{\.z}}1
+}
+
+% Ciągła numeracja wzorów przez całą pracę
+\counterwithout{equation}{chapter}
+
+% Ciągła numeracja tabel przez całą pracę
+\counterwithout{table}{chapter}
+
+% Ciągła numeracja rysunków przez całą pracę
+\counterwithout{figure}{chapter}
+
+\AtBeginDocument{
+    \counterwithout{lstlisting}{chapter} % Ciągła numeracja listingów przez całą pracę
+	\renewcommand{\lstlistingname}{Kod źródłowy}   % Zmienia "Listing 1" na "Kod źródłowy 1"
+}
+
+
+% Konfiguracja stylu stron, nagłówków i stopek (Pakiet fancyhdr)
+% Numeracja stron: na dole, po zewnętrznej stronie, druk dwustronny
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[LE,RO]{\thepage}        % Bieżący numer strony: lewa parzysta (LE), prawa nieparzysta (RO)
+\renewcommand{\headrulewidth}{0pt} % Całkowite usunięcie poziomej linii z nagłówka
+
+% Zapewnienie spójności formatowania na stronach otwierających rozdziały 
+% Domyślnie LaTeX wymusza na początku każdego rozdziału styl 'plain' (numer na środku).
+% Poniższy blok nadpisuje styl 'plain', przenosząc numer na krawędzie boczne (LE/RO).
+\fancypagestyle{plain}{%
+	\fancyhf{}%
+	\fancyfoot[LE,RO]{\thepage}%
+	\renewcommand{\headrulewidth}{0pt}%
+}
+
+% Rozwiązanie konfliktu z pakietem formatowania tytułów (titlesec)
+% Pakiet 'titlesec' często nadpisuje zachowanie komendy \chapter i ignoruje styl 'plain'.
+% Poniższa instrukcja bezwzględnie wymusza stosowanie stylu 'fancy' na stronach z \chapter.
+\usepackage{titlesec}
+\assignpagestyle{\chapter}{fancy}
+
+
+% Formatowanie nagłówków rozdziałów (pogrubiona bezszeryfowa: 14pt, 13pt, 12pt) [5]
+\titleformat{\chapter}[hang]{\normalfont\sffamily\bfseries\fontsize{14}{16}\selectfont}{\thechapter.}{1em}{}
+\titleformat{\section}{\normalfont\sffamily\bfseries\fontsize{13}{15}\selectfont}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\sffamily\bfseries\fontsize{12}{14}\selectfont}{\thesubsection}{1em}{}
+
+% Konfiguracja bibliografii (BibLaTeX + Biber)
+\usepackage[
+backend=biber,          % Silnik sortujący (Biber jest nowoczesny i obsługuje UTF-8)
+style=numeric,          % Styl cytowania: numeryczny [1], [2] (alternatywa: alphabetic lub authoryear)
+sorting=nty,            % Sortowanie w spisie: n-nazwisko, t-tytuł, y-rok
+defernumbers=true       % Prawidłowe numerowanie przy podziale na sekcje
+]{biblatex}
+
+% Wskazanie pliku bazy danych zawierającego wpisy bibliograficzne
+\addbibresource{thesis-references.bib}

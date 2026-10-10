@@ -1,82 +1,44 @@
-% Książka (Book)
-@book{wroblewski2023,
-	author    = {Wróblewski, Jan and Nowak, Adam},
-	title     = {Wprowadzenie do systemów mechatronicznych},
-	publisher = {Wydawnictwo Naukowe PWN},
-	year      = {2023},
-	address   = {Warszawa},
-	edition   = {2}
+% Artykuł naukowy / Raport techniczny (Article)
+@article{stoica1995eevdf,
+	author    = {Stoica, Ion and Abdel-Wahab, Hussein},
+	title     = {Earliest Eligible Virtual Deadline First: A Flexible and Accurate Mechanism for Proportional Share Resource Allocation},
+	journal   = {Technical Report, Old Dominion University},
+	year      = {1995},
+	url       = {https://www.semanticscholar.org/paper/Earliest-Eligible-Virtual-Deadline-First-%3A-A-and-Stoica-Abdel-Wahab/9d07417330e3d37a5767359531b4adc4c27a5349}
 }
 
-% Artykuł z czasopisma naukowego (Article)
-@article{kowalski2025,
-	author    = {Kowalski, Piotr},
-	title     = {Algorytmy sterowania robotów mobilnych w środowisku ROS},
-	journal   = {Przegląd Elektrotechniczny},
+% Strona internetowa, dokumentacja (Online)
+@online{linuxdocEEVDF,
+	author    = {{The Linux Kernel Developers}},
+	title     = {EEVDF Scheduler -- The Linux Kernel documentation},
+	year      = {2024},
+	url       = {https://docs.kernel.org/scheduler/sched-eevdf.html},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, artykuł techniczny (Online)
+@online{kernelInternalsEEVDF,
+	author    = {{Linux Kernel Internals}},
+	title     = {EEVDF -- Linux Kernel Internals},
+	year      = {2024},
+	url       = {https://kernel-internals.org/sched/eevdf/},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, kod źródłowy jądra (Online)
+@online{linuxFairC,
+	author    = {Torvalds, Linus and contributors},
+	title     = {linux/kernel/sched/fair.c at master},
+	year      = {2024},
+	url       = {https://github.com/torvalds/linux/blob/master/kernel/sched/fair.c},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, lista dyskusyjna jądra (Linux Kernel Mailing List) (Online)
+@online{lkmlRunToParity,
+	author    = {Zijlstra, Peter},
+	title     = {[sched/core] sched: Move PLACE\_LAG and RUN\_TO\_PARITY to sysctl},
 	year      = {2025},
-	volume    = {101},
-	number    = {3},
-	pages     = {45--52},
-	doi       = {10.15199/przeglad.2025.03.01}
-}
-
-% Artykuł z czasopisma naukowego (Article)
-@article{bonislawski2014projekt,
-	author  = {Bonisławski, A. and Juchniewicz, M. and Piotrowski, R.},
-	title   = {Projekt techniczny i budowa platformy latającej typu quadrocopter},
-	journal = {Pomiary Automatyka Robotyka},
-	year    = {2014},
-	number  = {1},
-	pages   = {91--97}
-}
-
-
-% Strona internetowa, dokumentacja, datasheet (Online)
-@online{stmicro2024,
-	author    = {{STMicroelectronics}},
-	title     = {STM32F407ZG Datasheet -- Reference Manual},
-	year      = {2024},
-	url       = {https://www.st.com/resource/en/reference_manual/rm0090.pdf},
-	urldate   = {2026-06-08} % Data dostępu (RRRR-MM-DD)
-}
-
-% Zarządzenie Rektora PW
-@manual{rektorPW2022,
-	author      = {{Rektor Politechniki Warszawskiej}},
-	title       = {Wymogi edytorskie dla prac dyplomowych w Politechnice Warszawskiej},
-	address     = {Warszawa},
-	year        = {2022},
-	institution = {Politechnika Warszawska}
-}
-
-% Materiały z konferencji naukowych
-@inproceedings{nowak2025control,
-	author    = {Nowak, Jan and Kowalski, Piotr},
-	title     = {Advanced Control Algorithms for Quadrotors},
-	booktitle = {Proceedings of the International Conference on Mechatronics (ICM 2025)},
-	year      = {2025},
-	pages     = {112--118},
-	doi       = {10.1109/ICM.2025.9999}
-}
-
-% Patenty
-@patent{kowalskiPatent2024,
-	author    = {Kowalski, Andrzej},
-	title     = {Układ napędowy robota mobilnego o zwiększonej przyczepności},
-	number    = {PL245123B1},
-	year      = {2024},
-	location  = {Polska},
-	holder    = {Politechnika Warszawska}
-}
-
-% Rozdział w książce zbiorowej
-@incollection{zielinski2024vision,
-	author    = {Zieliński, Marek},
-	title     = {Systemy wizyjne w kontroli jakości},
-	booktitle = {Nowoczesne Trendy w Automatyzacji Produkcji},
-	editor    = {Nowak, Adam},
-	publisher = {Wydawnictwo Naukowe PWN},
-	year      = {2024},
-	pages     = {45--68},
-	address   = {Warszawa}
+	url       = {https://lkml.org/lkml/2025/2/11/1991},
+	urldate   = {2026-10-10}
 }
