@@ -2386,19 +2386,29 @@
     <bcf:citekey order="12" intorder="1">19</bcf:citekey>
     <bcf:citekey order="13" intorder="1">26</bcf:citekey>
     <bcf:citekey order="14" intorder="1">38</bcf:citekey>
-    <bcf:citekey order="15" intorder="1">rektorPW2022</bcf:citekey>
-    <bcf:citekey order="16" intorder="1">bonislawski2014projekt</bcf:citekey>
-    <bcf:citekey order="17" intorder="1">bonislawski2014projekt</bcf:citekey>
-    <bcf:citekey order="18" intorder="1">rektorPW2022</bcf:citekey>
-    <bcf:citekey order="19" intorder="1">rektorPW2022</bcf:citekey>
-    <bcf:citekey order="20" intorder="1">wroblewski2023</bcf:citekey>
-    <bcf:citekey order="21" intorder="1">wroblewski2023</bcf:citekey>
-    <bcf:citekey order="22" intorder="1">kowalski2025</bcf:citekey>
-    <bcf:citekey order="23" intorder="1">stmicro2024</bcf:citekey>
-    <bcf:citekey order="24" intorder="1">zielinski2024vision</bcf:citekey>
-    <bcf:citekey order="25" intorder="1">kowalskiPatent2024</bcf:citekey>
-    <bcf:citekey order="26" intorder="1">nowak2025control</bcf:citekey>
-    <bcf:citekey order="27" intorder="1">rektorPW2022</bcf:citekey>
+    <bcf:citekey order="15" intorder="1">loyolaProcThreadScheduling</bcf:citekey>
+    <bcf:citekey order="16" intorder="1">msLearnProcessesThreads</bcf:citekey>
+    <bcf:citekey order="17" intorder="1">solomon2000threadScheduling</bcf:citekey>
+    <bcf:citekey order="18" intorder="1">msLearnPriorityBoosts</bcf:citekey>
+    <bcf:citekey order="19" intorder="1">bsodTutorialsQuantumBoost</bcf:citekey>
+    <bcf:citekey order="20" intorder="1">duffyBalanceSetManager</bcf:citekey>
+    <bcf:citekey order="21" intorder="1">bsodTutorialsQuantumBoost</bcf:citekey>
+    <bcf:citekey order="22" intorder="1">reactosThrdschdC</bcf:citekey>
+    <bcf:citekey order="23" intorder="1">solomon2000threadScheduling</bcf:citekey>
+    <bcf:citekey order="24" intorder="1">reactosKeX</bcf:citekey>
+    <bcf:citekey order="25" intorder="1">rektorPW2022</bcf:citekey>
+    <bcf:citekey order="26" intorder="1">bonislawski2014projekt</bcf:citekey>
+    <bcf:citekey order="27" intorder="1">bonislawski2014projekt</bcf:citekey>
+    <bcf:citekey order="28" intorder="1">rektorPW2022</bcf:citekey>
+    <bcf:citekey order="29" intorder="1">rektorPW2022</bcf:citekey>
+    <bcf:citekey order="30" intorder="1">wroblewski2023</bcf:citekey>
+    <bcf:citekey order="31" intorder="1">wroblewski2023</bcf:citekey>
+    <bcf:citekey order="32" intorder="1">kowalski2025</bcf:citekey>
+    <bcf:citekey order="33" intorder="1">stmicro2024</bcf:citekey>
+    <bcf:citekey order="34" intorder="1">zielinski2024vision</bcf:citekey>
+    <bcf:citekey order="35" intorder="1">kowalskiPatent2024</bcf:citekey>
+    <bcf:citekey order="36" intorder="1">nowak2025control</bcf:citekey>
+    <bcf:citekey order="37" intorder="1">rektorPW2022</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="nty">

@@ -16,5 +16,295 @@
   {}
 \endgroup
 
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{bsodTutorialsQuantumBoost}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=04a1dcb6884c54244520c7b8d497dc76}{%
+           family={{BSODTutorials}},
+           familyi={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{fullhash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{fullhashraw}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{bibnamehash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{authorbibnamehash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{authornamehash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{authorfullhash}{04a1dcb6884c54244520c7b8d497dc76}
+      \strng{authorfullhashraw}{04a1dcb6884c54244520c7b8d497dc76}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Thread Quantum, Thread Priority Boosting and Processor Affinity}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2013}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb http://bsodtutorials.blogspot.com/2013/11/thread-quantum-thread-priority-boosting.html
+      \endverb
+      \verb{url}
+      \verb http://bsodtutorials.blogspot.com/2013/11/thread-quantum-thread-priority-boosting.html
+      \endverb
+    \endentry
+    \entry{duffyBalanceSetManager}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=36a8286d55f53325aa5ab5699f508d5c}{%
+           family={Duffy},
+           familyi={D\bibinitperiod},
+           given={Joe},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{fullhash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{fullhashraw}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{bibnamehash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{authorbibnamehash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{authornamehash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{authorfullhash}{36a8286d55f53325aa5ab5699f508d5c}
+      \strng{authorfullhashraw}{36a8286d55f53325aa5ab5699f508d5c}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Priority-induced starvation: Why Sleep(1) is better than Sleep(0) and the Windows balance set manager}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2006}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://joeduffyblog.com/2006/08/22/priorityinduced-starvation-why-sleep1-is-better-than-sleep0-and-the-windows-balance-set-manager/
+      \endverb
+      \verb{url}
+      \verb https://joeduffyblog.com/2006/08/22/priorityinduced-starvation-why-sleep1-is-better-than-sleep0-and-the-windows-balance-set-manager/
+      \endverb
+    \endentry
+    \entry{loyolaProcThreadScheduling}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=d410c572263290f4a3e6a0e494593355}{%
+           family={{Loyola University Chicago, Department of Computer Science}},
+           familyi={L\bibinitperiod}}}%
+      }
+      \strng{namehash}{d410c572263290f4a3e6a0e494593355}
+      \strng{fullhash}{d410c572263290f4a3e6a0e494593355}
+      \strng{fullhashraw}{d410c572263290f4a3e6a0e494593355}
+      \strng{bibnamehash}{d410c572263290f4a3e6a0e494593355}
+      \strng{authorbibnamehash}{d410c572263290f4a3e6a0e494593355}
+      \strng{authornamehash}{d410c572263290f4a3e6a0e494593355}
+      \strng{authorfullhash}{d410c572263290f4a3e6a0e494593355}
+      \strng{authorfullhashraw}{d410c572263290f4a3e6a0e494593355}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Process/Thread Scheduling -- Introduction to Operating Systems: Principles and Practice}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://os.cs.luc.edu/scheduling.html
+      \endverb
+      \verb{url}
+      \verb https://os.cs.luc.edu/scheduling.html
+      \endverb
+    \endentry
+    \entry{msLearnProcessesThreads}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=140864078aeca1c7c35b4beb33c53c34}{%
+           family={{Microsoft}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{bibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorbibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authornamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \field{extraname}{1}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{About Processes and Threads}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://learn.microsoft.com/en-us/windows/win32/procthread/about-processes-and-threads
+      \endverb
+      \verb{url}
+      \verb https://learn.microsoft.com/en-us/windows/win32/procthread/about-processes-and-threads
+      \endverb
+    \endentry
+    \entry{msLearnPriorityBoosts}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=140864078aeca1c7c35b4beb33c53c34}{%
+           family={{Microsoft}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{fullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{bibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorbibnamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authornamehash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhash}{140864078aeca1c7c35b4beb33c53c34}
+      \strng{authorfullhashraw}{140864078aeca1c7c35b4beb33c53c34}
+      \field{extraname}{2}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Priority Boosts}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2025}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://learn.microsoft.com/en-us/windows/win32/procthread/priority-boosts
+      \endverb
+      \verb{url}
+      \verb https://learn.microsoft.com/en-us/windows/win32/procthread/priority-boosts
+      \endverb
+    \endentry
+    \entry{reactosKeX}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=5ad02fd62ad6322a1525dddc894b1ee2}{%
+           family={{ReactOS Project}},
+           familyi={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{fullhash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{fullhashraw}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{bibnamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorbibnamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authornamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorfullhash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorfullhashraw}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \field{extraname}{1}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{ReactOS 0.4.17-dev}
+      \field{title}{ntoskrnl/include/internal/ke\_x.h File Reference}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://doxygen.reactos.org/de/d90/ke__x_8h.html
+      \endverb
+      \verb{url}
+      \verb https://doxygen.reactos.org/de/d90/ke__x_8h.html
+      \endverb
+    \endentry
+    \entry{reactosThrdschdC}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=5ad02fd62ad6322a1525dddc894b1ee2}{%
+           family={{ReactOS Project}},
+           familyi={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{fullhash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{fullhashraw}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{bibnamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorbibnamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authornamehash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorfullhash}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \strng{authorfullhashraw}{5ad02fd62ad6322a1525dddc894b1ee2}
+      \field{extraname}{2}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{ReactOS 0.4.17-dev}
+      \field{title}{ntoskrnl/ke/thrdschd.c Source File}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://doxygen.reactos.org/db/d73/thrdschd_8c_source.html
+      \endverb
+      \verb{url}
+      \verb https://doxygen.reactos.org/db/d73/thrdschd_8c_source.html
+      \endverb
+    \endentry
+    \entry{solomon2000threadScheduling}{inbook}{}{}
+      \name{author}{2}{}{%
+        {{hash=20c35e9fb84c988b61de34af0275f743}{%
+           family={Solomon},
+           familyi={S\bibinitperiod},
+           given={David\bibnamedelima A.},
+           giveni={D\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=96f9a4f517777e253c3bb78309e47e37}{%
+           family={Russinovich},
+           familyi={R\bibinitperiod},
+           given={Mark\bibnamedelima E.},
+           giveni={M\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Microsoft Press}%
+      }
+      \strng{namehash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{fullhash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{fullhashraw}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{bibnamehash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{authorbibnamehash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{authornamehash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{authorfullhash}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \strng{authorfullhashraw}{91fb1fc19074e5ac384e5c0c4e6bfd79}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Inside Microsoft Windows 2000}
+      \field{edition}{3}
+      \field{isbn}{0735610215}
+      \field{title}{Thread Scheduling}
+      \field{urlday}{11}
+      \field{urlmonth}{10}
+      \field{urlyear}{2026}
+      \field{year}{2000}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://flylib.com/books/en/3.169.1.54/1/
+      \endverb
+      \verb{url}
+      \verb https://flylib.com/books/en/3.169.1.54/1/
+      \endverb
+    \endentry
+  \enddatalist
+  \missing{1}
+  \missing{13}
+  \missing{15}
+  \missing{18}
+  \missing{19}
+  \missing{26}
+  \missing{38}
+  \missing{4}
+  \missing{bonislawski2014projekt}
+  \missing{kowalski2025}
+  \missing{kowalskiPatent2024}
+  \missing{nowak2025control}
+  \missing{rektorPW2022}
+  \missing{stmicro2024}
+  \missing{wroblewski2023}
+  \missing{zielinski2024vision}
+\endrefsection
 \endinput
 

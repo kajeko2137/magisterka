@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian) (preloaded format=xelatex 2026.9.9)  10 OCT 2026 18:04
+This is XeTeX, Version 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian) (preloaded format=xelatex 2026.9.9)  11 OCT 2026 20:58
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -950,7 +950,120 @@ Package biblatex Info: Automatic encoding selection.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'thesis-main.bbl' found.
 
-(./thesis-main.bbl)
+(./thesis-main.bbl
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                1
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                13
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                15
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                18
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                19
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                26
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                38
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                4
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                bonislawski2014projekt
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                kowalski2025
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                kowalskiPatent2024
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                nowak2025control
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                rektorPW2022
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                stmicro2024
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                wroblewski2023
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+
+Package biblatex Warning: The following entry could not be found
+(biblatex)                in the database:
+(biblatex)                zielinski2024vision
+(biblatex)                Please verify the spelling and rerun
+(biblatex)                LaTeX afterwards.
+
+)
 
 Package biblatex Warning: citation '1'
 (biblatex)                was not found at all in the .bbl file,
@@ -1120,10 +1233,6 @@ esnych
  []
 
 
-Package hyperref Warning: Difference (2) between bookmark levels is greater 
-(hyperref)                than one, level fixed on input line 4.
-
-
 LaTeX Warning: Citation '1' on page 9 undefined on input line 5.
 
 
@@ -1172,9 +1281,13 @@ LaTeX Warning: Citation '26' on page 10 undefined on input line 27.
 
 LaTeX Warning: Citation '38' on page 10 undefined on input line 27.
 
-)
+
 
 [10]
+
+[11])
+
+[12]
 \openout2 = `chapter2_background.aux'.
 
  (./chapter2_background.tex
@@ -1188,29 +1301,29 @@ n/10.95 \item\TU/Arial(0)/m/n/10.95 ).
 
 
 
-[11
+[13
 
 
 
 
 ]
 
-[12]
+[14]
 
-[13]
+[15]
 Overfull \hbox (8.24222pt too wide) in paragraph at lines 112--113
 []\TU/Arial(0)/b/n/10.95 Interpunkcja matematyczna: \TU/Arial(0)/m/n/10.95 wzór
  matematyczny, nawet jeśli jest wyśrodkowany i umiesz-
  []
 
 
-LaTeX Warning: Citation 'rektorPW2022' on page 14 undefined on input line 158.
+LaTeX Warning: Citation 'rektorPW2022' on page 16 undefined on input line 158.
 
 
 
-[14]
+[16]
 
-[15]
+[17]
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10.95> not available
 (Font)              Font shape `TU/lmtt/b/n' tried instead on input line 218.
 
@@ -1230,9 +1343,9 @@ TU/Arial(0)/m/n/10.95 czy \TU/lmtt/m/n/10.95 \bottomrule\TU/Arial(0)/m/n/10.95
 
 
 
-[16]
+[18]
 
-[17]
+[19]
 Overfull \hbox (9.01224pt too wide) in paragraph at lines 349--350
 \TU/Arial(0)/m/n/10.95 szerokości relatywnych, np. \TU/lmtt/m/n/10.95 0.5\textw
 idth \TU/Arial(0)/m/n/10.95 dla małych schematów lub \TU/lmtt/m/n/10.95 0.8\tex
@@ -1241,22 +1354,22 @@ twidth
 
 
 
-[18]
+[20]
 File: Rys1.png Graphic file (type bmp)
 <Rys1.png>
 
 
-[19]
+[21]
 File: Rys2.png Graphic file (type bmp)
 <Rys2.png>
 
 
-[20]
+[22]
 File: Rys3.png Graphic file (type bmp)
 <Rys3.png>
 
 
-LaTeX Warning: Citation 'bonislawski2014projekt' on page 21 undefined on input 
+LaTeX Warning: Citation 'bonislawski2014projekt' on page 23 undefined on input 
 line 438.
 
 
@@ -1267,12 +1380,12 @@ awione w pracy [[]].
 
 
 
-[21]
+[23]
 File: Rys4.png Graphic file (type bmp)
 <Rys4.png>
 
 
-LaTeX Warning: Citation 'bonislawski2014projekt' on page 22 undefined on input 
+LaTeX Warning: Citation 'bonislawski2014projekt' on page 24 undefined on input 
 line 448.
 
 File: Rys5.png Graphic file (type bmp)
@@ -1282,40 +1395,40 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 
-[22]
+[24]
 
-LaTeX Warning: Citation 'rektorPW2022' on page 23 undefined on input line 470.
+LaTeX Warning: Citation 'rektorPW2022' on page 25 undefined on input line 470.
 
 
 
-[23]
+[25]
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
 nput line 485.
 LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <10> not available
 (Font)              Font shape `TU/lmtt/b/n' tried instead on input line 486.
 
 
-LaTeX Warning: Citation 'rektorPW2022' on page 24 undefined on input line 509.
+LaTeX Warning: Citation 'rektorPW2022' on page 26 undefined on input line 509.
 
 
-LaTeX Warning: Citation 'wroblewski2023' on page 24 undefined on input line 515
+LaTeX Warning: Citation 'wroblewski2023' on page 26 undefined on input line 515
 .
 
 
 
-[24]
+[26]
 
-LaTeX Warning: Citation 'wroblewski2023' on page 25 undefined on input line 546
+LaTeX Warning: Citation 'wroblewski2023' on page 27 undefined on input line 546
 .
 
 
-LaTeX Warning: Citation 'kowalski2025' on page 25 undefined on input line 549.
+LaTeX Warning: Citation 'kowalski2025' on page 27 undefined on input line 549.
 
 
-LaTeX Warning: Citation 'stmicro2024' on page 25 undefined on input line 549.
+LaTeX Warning: Citation 'stmicro2024' on page 27 undefined on input line 549.
 
 
-LaTeX Warning: Citation 'zielinski2024vision' on page 25 undefined on input lin
+LaTeX Warning: Citation 'zielinski2024vision' on page 27 undefined on input lin
 e 552.
 
 
@@ -1325,11 +1438,11 @@ cowania [[]]”.
  []
 
 
-LaTeX Warning: Citation 'kowalskiPatent2024' on page 25 undefined on input line
+LaTeX Warning: Citation 'kowalskiPatent2024' on page 27 undefined on input line
  555.
 
 
-LaTeX Warning: Citation 'nowak2025control' on page 25 undefined on input line 5
+LaTeX Warning: Citation 'nowak2025control' on page 27 undefined on input line 5
 58.
 
 
@@ -1340,16 +1453,16 @@ edstawione w pracy [[]]”.
 
 
 
-[25])
+[27])
 
-[26]
+[28]
 \openout2 = `chapter3_design.aux'.
 
  (./chapter3_design.tex
 Rozdział 3.
 )
 
-[27
+[29
 
 
 
@@ -1361,7 +1474,7 @@ Rozdział 3.
 Rozdział 4.
 )
 
-[28
+[30
 
 
 
@@ -1380,29 +1493,43 @@ któ-
 
 )
 
-[29
-
-
-
-
-]
-
-LaTeX Warning: Empty bibliography on input line 179.
-
-
-
-[30
-
-
-
-]
-
 [31
 
 
+
+
 ]
+Overfull \hbox (21.17227pt too wide) in paragraph at lines 179--179
+[][] [][] [][] [] [][][][][][][] [] [][][][][] [] [][][][][][][][][][] [] [][][
+][][] [][] [][][][][][][][][] [][] [][][] [][] [][][][][][][]$[][] \TU/Arial(0)
+/m/n/10.95 (term. wiz. 11. 10. 2026). 
+ []
+
+
+Overfull \hbox (10.99559pt too wide) in paragraph at lines 179--179
+[]\TU/Arial(0)/m/n/10.95 ReactOS Project. \TU/Arial(0)/m/it/10.95 ntoskrnl/incl
+ude/internal/ke_x.h File Reference\TU/Arial(0)/m/n/10.95 . ReactOS 0.4.17-- dev
+. 2026.
+ []
+
+
 
 [32
+
+
+
+]
+
+[33
+
+]
+
+[34
+
+
+]
+
+[35
 
 ] (./thesis-main.lof)
 \tf@lof=\write6
@@ -1410,12 +1537,12 @@ LaTeX Warning: Empty bibliography on input line 179.
 
 
 
-[33
+[36
 
 
 ]
 
-[34
+[37
 
 ] (./thesis-main.lot)
 \tf@lot=\write7
@@ -1423,47 +1550,47 @@ LaTeX Warning: Empty bibliography on input line 179.
 
 
 
-[35
-
-
-]
-
-[36
-
-]
-
-[37
-
-
-]
-
 [38
 
+
 ]
 
-LaTeX Warning: Citation 'rektorPW2022' on page 39 undefined on input line 268.
-
-
-
 [39
-
 
 ]
 
 [40
 
+
 ]
 
 [41
 
-
 ]
 
+LaTeX Warning: Citation 'rektorPW2022' on page 42 undefined on input line 268.
+
+
+
 [42
+
 
 ]
 
 [43
+
+]
+
+[44
+
+
+]
+
+[45
+
+]
+
+[46
 
 
 ] (./thesis-main.aux (./chapter1_intro.aux) (./chapter2_background.aux)
@@ -1473,28 +1600,19 @@ LaTeX Warning: Citation 'rektorPW2022' on page 39 undefined on input line 268.
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
 Package rerunfilecheck Info: File `thesis-main.out' has not changed.
-(rerunfilecheck)             Checksum: F3399E260FD2FAE4C5CB8AF2B215FB40;3242.
-
-Package biblatex Warning: Please (re)run Biber on the file:
-(biblatex)                thesis-main
-(biblatex)                and rerun LaTeX afterwards.
-
+(rerunfilecheck)             Checksum: 01F9E0D65104C75A7095BEE52B555868;3643.
 Package logreq Info: Writing requests to 'thesis-main.run.xml'.
 \openout1 = `thesis-main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 24413 strings out of 473835
- 474741 string characters out of 5731947
- 1488475 words of memory out of 5000000
- 47118 multiletter control sequences out of 15000+600000
+ 24483 strings out of 473835
+ 477582 string characters out of 5731947
+ 1489849 words of memory out of 5000000
+ 47188 multiletter control sequences out of 15000+600000
  565758 words of font info for 107 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  84i,12n,98p,1193b,5673s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on thesis-main.pdf (43 pages).
+Output written on thesis-main.pdf (46 pages).
