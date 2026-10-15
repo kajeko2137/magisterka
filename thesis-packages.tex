@@ -34,10 +34,31 @@
 }
 \renewcommand{\familydefault}{\sfdefault}
 
-% Definiowanie niestandardowych czcionek uczelnianych
-% (Nazwy w nawiasach klamrowych muszą odpowiadać tym zainstalowanym w Twoim systemie)
-\newfontfamily\adagioslab{Adagio_Slab-Regular}
-\newfontfamily\adagioslablight{Adagio_Slab-Light}
+% --- Czcionki uczelniane: Adagio Slab ---------------------------------------
+% Pliki .otf leżą w katalogu pracy, ale NIE są zainstalowane w systemie.
+% Dlatego ładujemy je po ścieżce pliku (Path + Extension), a nie po nazwie
+% rodziny - wyszukiwanie po nazwie wymagałoby instalacji w systemie
+% (fc-cache) i kończyło się błędem "The font ... cannot be found".
+%
+% Ścieżka jest względna wobec katalogu, z którego uruchamiasz kompilację,
+% dlatego zawsze kompiluj z katalogu pracy.
+\newcommand{\AdagioFontDir}{./}
+\newfontfamily\adagioslab{Adagio_Slab}[
+  Path = \AdagioFontDir,
+  Extension = .otf,
+  UprightFont = *-Regular,
+  BoldFont = *-Regular,
+  ItalicFont = *-Regular,
+  BoldItalicFont = *-Regular
+]
+\newfontfamily\adagioslablight{Adagio_Slab}[
+  Path = \AdagioFontDir,
+  Extension = .otf,
+  UprightFont = *-Light,
+  BoldFont = *-Light,
+  ItalicFont = *-Light,
+  BoldItalicFont = *-Light
+]
 
 \usepackage{polyglossia}
 \setdefaultlanguage{polish}
@@ -49,6 +70,12 @@
 % Interlinia 1.15 [3]
 \usepackage{setspace}
 \setstretch{1.15}
+
+% Zapobiega wychodzeniu wierszy poza marginesy: długie, nieprzerywalne
+% elementy (\texttt{runq\_choose()}, adresy URL) potrafią wepchnąć koniec
+% wiersza w margines. emergencystretch pozwala TeX-owi rozluźnić odstępy
+% w takim wierszu, zamiast przekraczać szerokość kolumny.
+\setlength{\emergencystretch}{3em}
 
 % Pakiety dodatkowe
 \usepackage{graphicx}
@@ -156,8 +183,7 @@
 \usepackage[
 backend=biber,          % Silnik sortujący (Biber jest nowoczesny i obsługuje UTF-8)
 style=numeric,          % Styl cytowania: numeryczny [1], [2] (alternatywa: alphabetic lub authoryear)
-sorting=nty,            % Sortowanie w spisie: n-nazwisko, t-tytuł, y-rok
-defernumbers=true       % Prawidłowe numerowanie przy podziale na sekcje
+sorting=none            % Numeracja w kolejności pierwszego cytowania: 1, 2, 3, ...
 ]{biblatex}
 
 % Wskazanie pliku bazy danych zawierającego wpisy bibliograficzne

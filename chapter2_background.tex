@@ -1,562 +1,95 @@
-% --- Plik: chapter2_background.tex ---
+\chapter{Istniejące algorytmy planowania czasu procesora w nowoczesnych systemach}
+\label{ch:istniejace}
 
-\chapter{Wymagania edytorskie}
-\label{ch:wymagania} % To jest unikalny znacznik tego rozdziału
+\section{System Linux i architektura EEVDF}
+W nowoczesnych wersjach jądra systemu Linux, domyślnym algorytmem planowania (ang. \textit{scheduler}) dla procesów standardowych jest algorytm Earliest Eligible Virtual Deadline First (EEVDF). Zastąpił on wieloletni standard znany jako Completely Fair Scheduler (CFS), rozwiązując fundamentalny problem balansu między sprawiedliwością przydziału czasu a opóźnieniami w obsłudze zadań interaktywnych \cite{linuxdocEEVDF, lkmlSchedV612}. 
 
-\section{Ogólna struktura i formatowanie tekstu}
-Prace dyplomowe realizowane na Politechnice Warszawskiej muszą spełniać ścisłe kryteria redakcyjne, które gwarantują spójność estetyczną i edytorską wszystkich publikacji akademickich. Poniżej przedstawiono zestawienie najważniejszych wymagań technicznych dotyczących układu graficznego oraz formatowania tekstu głównego.
-
+Działanie algorytmu EEVDF opiera się na ścisłych podstawach matematycznych \cite{stoica1995eevdf} i operuje na kilku kluczowych wartościach przypisywanych każdemu zadaniu:
 \begin{itemize}
-	\item \textbf{Format:} praca obowiązkowo posiada układ dwustronny na formacie A4. 
-	\item \textbf{Podział na rozdziały:} zastosowano maksymalnie trzy poziomy podrozdziałów. Tytuły głównych rozdziałów (I poziomu) zaczynają się od nowej strony. Tytuły te powinny być zapisane pogrubioną czcionką bezszeryfową w malejących rozmiarach: 14~pkt (I poziom), 13~pkt (II poziom) i 12~pkt (III poziom).
-	
-	\item \textbf{Krój pisma i interlinia:} tekst główny pisze się zazwyczaj czcionką bezszeryfową (np. Arial) w rozmiarze 11, z zalecaną interlinią 1,15. 
-	
-	\item \textbf{Numeracja stron:} jest wymagana i musi znajdować się u dołu po zewnętrznej stronie, z zastosowaniem odbicia lustrzanego dla stron parzystych i nieparzystych.
-	
-	\item \textbf{Akapity i wyliczenia:} akapity można formatować stosując wcięcie 0,5~cm lub pozostawić je bez wcięcia, stosując odstęp 4~pkt przed akapitem. 
+	\item \textbf{Żądany kwant czasu} (\textit{requested time slice / slice})
+	\item \textbf{Wirtualny czas wykonania} (\textit{virtual runtime / vruntime})
+	\item \textbf{Opóźnienie} (\textit{lag})
+	\item \textbf{Priorytet} (\textit{priority / weight})
 \end{itemize}
 
+Kiedy nowe lub powracające ze stanu uśpienia zadanie trafia do kolejki procesów gotowych, otrzymuje bazowy kwant czasu (\textit{slice}). Wartość ta oparta jest na zmiennych konfiguracyjnych systemu (np. \texttt{sysctl\_sched\_base\_slice}) i jest dynamicznie skalowana na podstawie wagi procesu (wynikającej z jego priorytetu \textit{nice}) \cite{linuxFairC, lkmlRunToParity}. Następnie, gdy zadanie zaczyna być wykonywane przez procesor, jego wirtualny czas wykonania (\texttt{vruntime}) stale rośnie. Wartość ta odzwierciedla rzeczywisty czas spędzony na procesorze, znormalizowany przez wagę zadania. Zliczanie tego czasu opiera się na precyzyjnych licznikach sprzętowych procesora (np. w architekturze amd64), jednak sama aktualizacja wirtualnego czasu i struktur danych jest w całości realizowana programowo przez jądro systemu operacyjnego, zazwyczaj podczas obsługi przerwań zegarowych \cite{linuxSchedH, linuxFairC}.
 
-\section{Wypunktowania}
+Na bazie początkowo przypisanego kwantu czasu oraz \texttt{vruntime}, system wylicza wirtualny termin zakończenia (\textit{virtual deadline}). Reprezentuje on moment, do którego proces powinien w idealnych warunkach skonsumować swój przydzielony czas. Algorytm na bieżąco oblicza również opóźnienie (\textit{lag}), będące różnicą pomiędzy czasem, jaki zadanie powinno było otrzymać w idealnym, proporcjonalnym modelu podziału czasu (tzw. \textit{fluid-flow model}), a czasem, który faktycznie wykorzystało. Jeżeli wartość \textit{lag} jest mniejsza od zera, oznacza to, że proces otrzymał więcej czasu procesora niż pozostałe procesy rywalizujące o czas procesora. W takim scenariuszu proces traci kwalifikowalność (\textit{ineligible}) i jest kategorycznie wykluczony z możliwości przydziału sprzętowego do momentu, aż ogólny upływ czasu w systemie sprawi, że jego \textit{lag} ponownie wzrośnie do wartości nieujemnej \cite{linuxdocEEVDF, stoica1995eevdf}.
 
-System \LaTeX{} posiada ogromne możliwości formatowania list, jednak zgodnie z obowiązującymi zaleceniami edytorskimi Politechniki Warszawskiej, w pracach dyplomowych dopuszcza się wyłącznie dwa rodzaje znaków wyliczenia:
+\subsection{Wybór procesu i struktury danych}
+Działanie każdego planisty w nowoczesnych systemach operacyjnych opiera się na sprzętowym mechanizmie przerwań czasowych (ang. \textit{timer interrupts}). Ponieważ procesor nie może jednocześnie wykonywać własnego kodu schedulera oraz kodu aplikacji użytkownika, wbudowany kontroler przerwań z dużą częstotliwością wstrzymuje wykonywane zadanie, przekazując sterowanie do jądra systemu \cite{wikiScheduling}. Daje to algorytmowi możliwość przeliczenia wskaźników i, w razie potrzeby, wywłaszczenia procesu.
 
+Scheduler EEVDF przechowuje informacje o aktywnych procesach w zrównoważonym drzewie czerwono-czarnym (ang. \textit{Augmented Red-Black Tree}). W przeciwieństwie do naiwnego podejścia, drzewo to nadal sortuje węzły na podstawie wirtualnego czasu wykonania (\texttt{vruntime}), co układa zadania od lewej do prawej. Kluczową innowacją jest jednak rozszerzenie (\textit{augmentation}) każdego węzła o dodatkowe pole \texttt{min\_deadline}, które przechowuje najkrótszy termin zakończenia z danego węzła i wszystkich jego potomków. Dzięki temu struktura działa jednocześnie jako drzewo wyszukiwania binarnego oraz jako kopiec (min-heap) dla wartości \textit{deadline}. Architektura ta pozwala systemowi w optymalnym czasie $O(\log n)$ odrzucić całe poddrzewa i natychmiast odnaleźć zadanie o najwcześniejszym \textit{virtual deadline}, które jednocześnie spełnia warunek kwalifikowalności ($lag \ge 0$) i to ono zostaje wybrane do działania na procesorze \cite{kernelInternalsEEVDF, linuxFairC}.
+
+\subsection{Mechanizm Run to Parity}
+Algorytm EEVDF w swojej czystej, teoretycznej postaci zakłada wyidealizowany model maszyny obliczeniowej. W rzeczywistości fizyczne procesory opierają swoją wydajność na hierarchii pamięci podręcznej (Cache L1/L2/L3), która przechowuje dane powiązane z aktualnie wykonywanym procesem. Niezmodyfikowany mechanizm doboru zadań oparty wyłącznie na \textit{deadline'ach} prowadziłby do zjawiska tzw. \textit{over-scheduling} – zbyt częstych zmian aktualnie działającego zadania. Skutkowałoby to znacznymi stratami cykli procesora na ciągłą wymianę linii pamięci podręcznej (\textit{cache miss}) oraz narzutem związanym z przełączaniem kontekstu.
+
+Aby rozwiązać ten problem, w systemie Linux wprowadzono mechanizm \textit{Run to Parity} \cite{lkmlRunToParity}. Zgodnie z tą regułą, proces, który już przejął kontrolę nad jednostką obliczeniową, z reguły nie zostaje wywłaszczony przez inne, standardowe zadania posiadające wcześniejszy \textit{virtual deadline}, dopóki jego własne opóźnienie (\textit{lag}) nie spadnie do zera. Dopiero gdy proces "wyrówna" swój dług wobec systemu (osiągając parytet), zdejmuje się z niego ochronę, pozwalając na przejęcie procesora przez kolejne kwalifikujące się zadanie. Mechanizm ten gwarantuje dłuższe, nieprzerwane odcinki pracy pojedynczego wątku, co maksymalizuje wykorzystanie pamięci podręcznej i zwiększa ogólną przepustowość sprzętu (throughput), nie naruszając jednocześnie długoterminowych matematycznych gwarancji sprawiedliwości algorytmu \cite{lkmlSchedV612}.
+
+
+
+
+
+
+\section{Systemy z grupy Windows}
+W nowoczesnych systemach z rodziny Windows za przydział czasu procesora odpowiada planista (ang. \textit{scheduler}) zaprojektowany pierwotnie na potrzeby architektury Microsoft Windows NT. W przeciwieństwie do algorytmów opartych na sprawiedliwym podziale czasu, rozwiązanie firmy Microsoft bazuje na wywłaszczeniowym planowaniu wielozadaniowym, w którym absolutnym fundamentem jest rygorystyczny priorytet \cite{loyolaProcThreadScheduling}. Co istotne, jednostką planowania w systemie Windows nie jest proces, lecz pojedynczy wątek. Proces pełni jedynie rolę kontenera na zasoby (takie jak pamięć czy kontekst zabezpieczeń), podczas gdy o dostęp do jednostki obliczeniowej rywalizują bezpośrednio wątki \cite{msLearnProcessesThreads}.
+
+Architektura planisty definiuje 32 odrębne poziomy priorytetów (od 0 do 31), które podzielone są na trzy główne kategorie \cite{solomon2000threadScheduling}:
 \begin{itemize}
-	\item standardową ,,kropkę'' (jest to domyślny punktor w otoczeniu \texttt{itemize}),
-	
-	\item[--] myślnik (aby go uzyskać, należy dopisać argument \texttt{[--]} bezpośrednio po znaczniku \texttt{\textbackslash item}).
+	\item \textbf{Poziom 0 (Zero-Page Thread):} Zarezerwowany wyłącznie dla systemowego wątku bezczynności (\textit{idle thread}), który uruchamia się tylko przy braku innych zadań. Zajmuje się on m.in. asynchronicznym zerowaniem wolnych stron pamięci fizycznej.
+	\item \textbf{Poziomy 1--15 (Priorytety dynamiczne):} Przydzielane standardowym wątkom aplikacji użytkownika oraz niekrytycznym wątkom jądra. Podlegają one ciągłym, dynamicznym algorytmom modyfikacji (wzmacnianiu i degradacji).
+	\item \textbf{Poziomy 16--31 (Priorytety czasu rzeczywistego):} Zarezerwowane dla absolutnie krytycznych operacji (np. przetwarzanie multimediów przy minimalnych opóźnieniach, sterowniki sprzętowe). Wątki na tych poziomach mają sztywny priorytet i nie podlegają dynamicznym zmianom \cite{msLearnPriorityBoosts}.
 \end{itemize}
 
-\noindent Zatem w tekście głównym należy unikać wypunktowań numerycznych (otoczenie \texttt{enumerate}), list opisowych i innych niestandardowych form, chyba że wymaga tego ścisła logika wywodu (np. wypisywanie kolejnych kroków algorytmu).
-
-
-\section{Spójniki na końcu linii}
-
-Należy zwrócić uwagę na nie pozostawianie pojedynczych liter na końcu linijki tekstu (są to tzw. wiszące spójniki i przyimki). Problem ten dotyczy najczęściej małych liter takich jak: a, i, o, u, w, z, ale warto pamiętać, że zasada ta obejmuje również wielkie litery rozpoczynające nowe zdania (np. A, I, W, Z), o czym autorzy prac często zapominają.
-
-Aby trwale połączyć taką literę z następującym po niej słowem i wymusić ich ewentualne przeniesienie do nowej linii razem, w kodzie \LaTeX{} zamiast zwykłej spacji należy użyć tzw. twardej spacji (niełamliwej). Wstawia się ją za pomocą znaku tyldy (\texttt{\textasciitilde}).
-
-\vspace{0.2cm}
-
-\noindent \textbf{Przykłady zastosowania w kodzie:}
-\begin{itemize}
-	\item \textbf{Zapis niezalecany:} \texttt{Napięcie w układzie wynosi...} (litera ,,w'' może nieestetycznie zawisnąć na końcu linii w wygenerowanym pliku PDF).
-	
-	\item \textbf{Zapis w pełni poprawny:} \texttt{Napięcie w\textasciitilde układzie wynosi...} (litera ,,w'' zawsze przeniesie się do nowej linii razem ze słowem ,,układzie'').
-\end{itemize}
-
-
-\section{Wzory matematyczne}
-
-
-W kwestii edycji wzorów matematycznych w pracy dyplomowej należy kierować się wytycznymi i dobrymi praktykami. Podobnie jak w przypadku elementów graficznych, każda zależność matematyczna musi być ściśle zintegrowana z tekstem głównym i bezpośrednio w nim przywołana za pomocą odpowiedniego odsyłacza numerowanego (polecenie \texttt{\textbackslash eqref\{...\}}). Wzory nie mogą pojawiać się w dokumencie w sposób przypadkowy ani pozostawać bez komentarza ze strony autora.
-
-\begin{itemize}
-	\item \textbf{Brak ścisłych regulacji:} oficjalne wytyczne nie określają szczegółowego sposobu numeracji samych wzorów (w przeciwieństwie do tabel i rysunków, które można numerować ciągle lub w obrębie rozdziałów).
-	
-	\item \textbf{Standardowa numeracja (wg szablonu):} równania matematyczne standardowo otrzymują kolejne numery -- w praktyce stosuje się numerację ciągłą dla całej pracy.
-	
-	\item \textbf{Format zapisu:} numery równań umieszcza się po prawej stronie wzoru w nawiasach okrągłych, np. (1), (2), (3).
-	
-	\item \textbf{Wzory nienumerowane:} jeśli dane równanie jest mniej ważne, nie musi być numerowane. W edytorze \LaTeX{} osiąga się to poprzez dodanie gwiazdki do nazwy otoczenia (np. \texttt{equation*}).
-	
-	\item \textbf{Dozwolona zmiana czcionki:} chociaż do pisania tekstu głównego zalecana jest czcionka bezszeryfowa (np. Arial), to w pracach zawierających bardzo dużo wzorów matematycznych i obliczeń dopuszcza się zastosowanie czcionki szeryfowej, takiej jak Times New Roman.
-	
-	\item \textbf{Globalny wykaz symboli i oznaczeń:} wszystkie kluczowe, powtarzające się w pracy symbole matematyczne, wielkości fizyczne oraz specyficzne oznaczenia indeksowe powinny zostać zebrane w zbiorczym zestawieniu (\textit{Wykazie symboli i skrótów}). Podczas gdy pod poszczególnymi wzorami stosuje się definicje lokalne (wprowadzane słowem ,,gdzie:''), wykaz globalny pozwala czytelnikowi na szybką weryfikację znaczenia danej zmiennej i jej jednostki w dowolnym momencie czytania pracy. Zgodnie ze ścisłym układem pracy dyplomowej, zbiorcze zestawienie wszystkich oznaczeń matematycznych oraz skrótów stanowi osobną część dokumentu i zamieszcza się je na końcu pracy (zaraz po spisie bibliograficznym, a przed spisem rysunków i tabel).	
-\end{itemize}
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-Podczas opisywania zjawisk fizycznych w tekście, zmienne takie jak napięcie $U$ czy prąd $I$ umieszczamy zawsze w trybie matematycznym. Podstawowe równanie opisujące moc czynną w układzie trójfazowym symetrycznym zdefiniowano wzorem \eqref{eq:moc_czynna}:
-
-\begin{equation}
-	P = \sqrt{3} \cdot U \cdot I \cdot \cos(\varphi),
-	\label{eq:moc_czynna}
-\end{equation}
-
-gdzie:
-\begin{itemize}
-	\item $P$ -- moc czynna układu [W],
-	\item $U$ -- napięcie międzyfazowe [V],
-	\item $I$ -- prąd przewodowy [A],
-	\item $\cos(\varphi)$ -- współczynnik mocy.
-\end{itemize}
-
-Dzięki zastosowaniu etykiet (\texttt{label}, wewnątrz środowiska \texttt{equation}), jak widać na podstawie równania \eqref{eq:moc_czynna}, moc zależy bezpośrednio od charakteru obciążenia. W przypadku konieczności obliczenia energii, korzystamy z całki oznaczonej:
-
-\begin{equation}
-	E = \int_{t_1}^{t_2} P(t) \, dt.
-	\label{eq:energia_calka}
-\end{equation}
-
-W pracach magisterskich, szczególnie na kierunkach takich jak Mechatronika, wzory matematyczne bardzo często zawierają operatory różniczkowe, ułamki, indeksy iteracyjne oraz symbole przybliżeń numerycznych. Aby zachować czytelność tekstu, należy stosować następujące reguły:
-
-\begin{itemize}
-	\item \textbf{Zapis pochodnych:} w systemie \LaTeX{} pochodne można zapisywać na dwa sposoby, zależnie od kontekstu:
-	\begin{itemize}
-		\item \textit{Notacja Newtona:} stosowana najczęściej przy funkcjach jednej zmiennej, np. \texttt{f'(x)}. W kodzie uzyskuje się ją poprzez zwykły apostrof z klawiatury w otoczeniu matematycznym: \texttt{\$f'(x)\$}.
-		
-		\item \textit{Notacja Leibniza:} stosowana przy pochodnych cząstkowych lub gdy chcemy wyraźnie wskazać zmienną, po której różniczkujemy. Wykorzystuje się do tego standardowe polecenie ułamka, np. \texttt{\textbackslash frac\{df\}\{dx\}}.
-	\end{itemize}
-	
-	\item \textbf{Indeksy dolne w iteracjach:} w metodach numerycznych kluczowe jest poprawne oznaczanie kolejnych kroków algorytmu. Indeks dolny pojedynczy uzyskujemy znakiem podkreślenia \texttt{\_}, natomiast indeks składający się z kilku znaków musi być bezwzględnie zamknięty w nawiasach klamrowych, np. \texttt{x\_\{n+1\}}.
-	
-	\item \textbf{Symbole specyficzne dla metod numerycznych:}
-	\begin{itemize}
-		\item \textbf{Znak przybliżenia:} w algorytmach numerycznych rzadko mamy do czynienia z idealną równością. Zamiast znaku \texttt{=}, do oznaczenia aproksymacji stosuje się symbol \texttt{\textbackslash approx} ($\approx$).
-		
-		\item \textbf{Granice i dążenie:} do zapisu warunków zbieżności algorytmu (np. krok $h$ dążący do zera) używa się komendy \texttt{\textbackslash to} ($\to$), na przykład: \texttt{h \textbackslash to 0}.
-	\end{itemize}
-	
-	\item \textbf{Interpunkcja matematyczna:} wzór matematyczny, nawet jeśli jest wyśrodkowany i umieszczony w osobnym bloku (\texttt{equation}), z punktu widzenia gramatyki jest częścią zdania. Oznacza to, że:
-	\begin{itemize}
-		\item jeśli wzór kończy myśl, na jego końcu (wewnątrz otoczenia \texttt{equation}, tuż po wzorze) musi znaleźć się \textbf{kropka},
-		
-		\item jeśli po wzorze następuje definicja użytych symboli (wprowadzana słowem ,,gdzie:''), na końcu wzoru musi znaleźć się \textbf{przecinek}.
-	\end{itemize}
-\end{itemize}
-
-Jednym z najpopularniejszych algorytmów numerycznego wyznaczania miejsc zerowych funkcji jest metoda stycznych, znana powszechnie jako metoda Newtona-Raphsona. Rozwiązanie iteracyjne opiera się na wykorzystaniu pierwszej pochodnej funkcji celu. Kolejne przybliżenia pierwiastka wyznacza się ze wzoru:
-\begin{equation}
-	x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)},
-	\label{eq:newton}
-\end{equation}
-gdzie:
-\begin{itemize}
-	\item $x_n$ -- wartość przybliżenia w $n$-tej iteracji,
-	\item $f(x_n)$ -- wartość funkcji w punkcie $x_n$,
-	\item $f'(x_n)$ -- wartość pierwszej pochodnej funkcji w punkcie $x_n$.
-\end{itemize}
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-W przypadku, gdy wyznaczenie pochodnej w postaci analitycznej $\frac{df}{dx}$ jest niemożliwe lub zbyt kosztowne obliczeniowo, stosuje się numeryczną aproksymację za pomocą ilorazu różnicowego progresywnego:
-\begin{equation}
-	f'(x) \approx \frac{f(x+h) - f(x)}{h},
-	\label{eq:pochodna_num}
-\end{equation}
-przy założeniu, że krok $h$ jest dostatecznie mały ($h \to 0$).
-
-W pracach z zakresu mechatroniki i elektrotechniki często zachodzi potrzeba odwołania się do bazowych praw fizyki, które stanowią fundament opisywanych układów. Doskonałym przykładem jest prawo Ohma, definiujące relację między prądem, napięciem a rezystancją w obwodzie elektrycznym. Zależność tę wyraża się za pomocą następującego równania:
-\begin{equation}
-	I = \frac{U}{R},
-	\label{eq:prawo_ohma}
-\end{equation}
-gdzie:
-\begin{itemize}
-	\item $I$ -- natężenie prądu elektrycznego [A],
-	\item $U$ -- napięcie przyłożone do końców przewodnika [V],
-	\item $R$ -- rezystancja (opór) przewodnika [$\Omega$].
-\end{itemize}
-
-Jak wynika z równania \eqref{eq:prawo_ohma}, natężenie prądu przepływającego przez idealny przewodnik jest wprost proporcjonalne do napięcia oraz odwrotnie proporcjonalne do jego rezystancji. 
-
-
-\section{Tabele}
-
-Wszystkie tabele w pracy dyplomowej muszą być czytelne i wyśrodkowane. Zgodnie z zasadami edytorskimi, podpis (tytuł) tabeli znajduje się zawsze nad nią. Podobnie jak w przypadku rysunków oraz wzorów matematycznych, każda tabela zamieszczona w dokumencie musi posiadać bezpośrednie odniesienie w tekście głównym (realizowane za pomocą polecenia \texttt{\textbackslash ref\{...\}}). Niedopuszczalne jest pozostawianie tabel jako samodzielnych, ,,wiszących'' bloków danych -- autor jest zobowiązany do omówienia lub przeanalizowania zawartości zestawienia w sąsiadującym akapicie. Poniżej znajdują się wytyczne dotyczące tworzenia i formatowania tabel, zebrane na podstawie zarządzenia Rektora PW~\cite{rektorPW2022} oraz instrukcji z szablonu \LaTeX{}.
-
-
-\begin{description}
-	\item[Oficjalne wymogi edytorskie:] \ 
-	\begin{itemize}
-		\item \textbf{Tytuł tabeli:} należy go umieścić nad tabelą. Powinien być wyjustowany do lewej strony i zapisany czcionką o kroju bezszeryfowym (np. Arial) w rozmiarze 9~pkt.
-		
-		\item \textbf{Źródło tabeli:} jeżeli do tabeli dołączone jest źródło, musi się ono znaleźć pod tabelą. Tak jak tytuł, powinno być wyjustowane do lewej strony i zapisane czcionką bezszeryfową o rozmiarze 9~pkt.
-		
-		\item \textbf{Numeracja:} autor ma do wyboru dwa warianty numeracji tabel: może być ona ciągła dla całej pracy (np. Tabela 1, 2, 3...) lub prowadzona niezależnie w poszczególnych rozdziałach (np. Tabela 1.1, 1.2, 2.1...).
-		
-		\item \textbf{Spis tabel:} Zgodnie ze ścisłym układem pracy dyplomowej, wykaz wszystkich tabel stanowi osobną część dokumentu i zamieszcza się go na końcu pracy (po spisie bibliograficznym, wykazie symboli i skrótów oraz spisie rysunków). W~systemie \LaTeX{} generuje się go całkowicie automatycznie za pomocą polecenia \texttt{\textbackslash listoftables}.
-	\end{itemize}
-	
-	\vspace{0.2cm}
-	
-	\item[Wskazówki techniczne:] \ 
-	\begin{itemize}
-		\item \textbf{Struktura otoczeń:} układ komórek wpisuje się w otoczeniu \texttt{tabular}. Aby jednak móc dodać do tabeli wymagany podpis (\texttt{\textbackslash caption}) i znacznik umożliwiający odwoływanie się do niej w tekście, otoczenie \texttt{tabular} należy zamknąć w nadrzędnym otoczeniu \texttt{table}.
-		
-		\item \textbf{Formatowanie kolumn:} liczbę i wyrównanie kolumn deklaruje się w argumencie polecenia \texttt{tabular}, używając liter: \texttt{l} (dosunięcie do lewej), \texttt{r} (dosunięcie do prawej), \texttt{c} (centrowanie) lub \texttt{p} (styl akapitowy z określoną szerokością). Aby dodać pionowe linie odgradzające kolumny, wstawia się między te litery znak pionowej kreski \texttt{|}.
-		
-		\item \textbf{Formatowanie wierszy:} poszczególne elementy w wierszu oddziela się znakiem \texttt{\&}, a sam wiersz kończy podwójnym ukośnikiem \texttt{\textbackslash\textbackslash}. Poziome linie w tabeli rysuje się za pomocą polecenia \texttt{\textbackslash hline} (pojedyncza linia) lub \texttt{\textbackslash hline\textbackslash hline} (podwójna linia, przydatna np. do oddzielenia nagłówka).
-		
-		\item \textbf{Pozycjonowanie na stronie:} lokalizacją tabeli zarządza się poprzez parametry literowe (np. \texttt{h} -- tutaj, \texttt{b} -- dół, \texttt{t} -- góra) i opcjonalny znak wykrzyknika \texttt{!}, który wymusza na kompilatorze utrzymanie tabeli w pożądanym miejscu.
-	\end{itemize}
-\end{description}
-
- W tabeli \ref{tab:wyniki_pomiarow} zestawiono wyniki eksperymentu zbadane dla różnych wartości obciążenia.
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-\begin{table}[htbp]
-	\centering % Ta komenda wyśrodkowuje samą fizyczną tabelę na stronie (nie jej tytuł)
-	
-	% Tytuł nad tabelą (sformatuje się automatycznie wg ustawień z preambuły)
-	\caption{Zestawienie wyników pomiarów dla badanych punktów pracy}
-	\label{tab:wyniki_pomiarow}
-	
-	% Definicja kolumn: l = lewo, c = środek
-	\begin{tabular}{lccc}
-		\toprule
-		\textbf{Nr pomiaru} & \textbf{Napięcie} $U$ [V] & \textbf{Prąd} $I$ [A] & \textbf{Moc} $P$ [W] \\
-		\midrule
-		1 & 230.1 & 1.25 & 287.6 \\
-		2 & 229.8 & 2.10 & 482.5 \\
-		3 & 230.5 & 3.50 & 806.7 \\
-		4 & 228.9 & 4.80 & 1098.7 \\
-		\bottomrule
-	\end{tabular}
-\end{table}
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-Analizując dane zgromadzone w tabeli \ref{tab:wyniki_pomiarow}, można zauważyć, że przy spadku napięcia poniżej nominalnych 230 V, system automatycznie zwiększa pobór prądu.
-
-Choć w nowoczesnej typografii naukowej zaleca się unikanie pionowych linii na rzecz tzw. tabel otwartych (bez bocznych krawędzi), w niektórych przypadkach -- na przykład przy bardzo gęstych zestawieniach danych -- zastosowanie pełnej siatki okazuje się konieczne. Aby poprawnie wygenerować taką tabelę w systemie \LaTeX{}, należy trzymać się klasycznego podejścia do formatowania:
-
-\begin{itemize}
-	\item \textbf{Rysowanie pionowych kresek (znak \texttt{|}):} za generowanie pionowych linii oddzielających kolumny odpowiada znak tzw. pionowej kreski, wpisywany z klawiatury jako \texttt{|}. Umieszcza się go bezpośrednio w parametrach otoczenia \texttt{tabular}. Deklaracja \texttt{\textbackslash begin\{tabular\}\{|l|c|c|\}} utworzy trzy kolumny, które będą ze wszystkich stron (oraz między sobą) oddzielone ciągłą, pionową linią.
-	
-	\item \textbf{Rezygnacja z pakietu \texttt{booktabs}:} używając pionowych kresek, należy bezwzględnie zrezygnować z zaawansowanych linii poziomych (takich jak \texttt{\textbackslash toprule}, \texttt{\textbackslash midrule} czy \texttt{\textbackslash bottomrule}). Pakiet \texttt{booktabs} wprowadza bowiem własne, niewidoczne marginesy pionowe, co powoduje zrywanie pionowych kresek i powstawanie nieestetycznych luk w siatce.
-	
-	\item \textbf{Klasyczne linie poziome (\texttt{\textbackslash hline}):} do rysowania ciągłych poziomych linii, które idealnie łączą się w rogach z pionowymi kreskami, stosuje się wyłącznie standardowe polecenie \texttt{\textbackslash hline}. Wpisuje się je zawsze po poleceniu przejścia do nowej linii, czyli za podwójnym ukośnikiem \texttt{\textbackslash\textbackslash}.
-\end{itemize}
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-W tabeli \ref{tab:mikrokontrolery} zestawiono parametry popularnych platform obliczeniowych wykorzystywanych w projektach mechatronicznych i systemach wbudowanych. 
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-\begin{table}[htbp]
-	\centering % Ta komenda wyśrodkowuje samą fizyczną tabelę na stronie (nie jej tytuł)
-	
-	% Tytuł nad tabelą (sformatuje się automatycznie wg ustawień z preambuły)
-	\caption{Porównanie parametrów technicznych wybranych platform mikrokontrolerowych}
-	\label{tab:mikrokontrolery}
-	
-	% Definicja kolumn: l = lewo, c = środek
-	% Dodane pionowe kreski "|" między literami oznaczającymi kolumny
-	\begin{tabular}{|l|l|c|c|} 
-		\hline % Pozioma linia na samej górze
-		\textbf{Platforma sprzętowa} & \textbf{Architektura rdzenia} & \textbf{Taktowanie} & \textbf{Pamięć RAM} \\
-		\hline % Pozioma linia pod nagłówkiem
-		Arduino Uno Rev3 & 8-bit AVR & 16 MHz & 2 KB \\
-		\hline
-		ESP32 NodeMCU & 32-bit Xtensa & 240 MHz & 520 KB \\
-		\hline
-		STM32 Nucleo-64 & 32-bit ARM Cortex-M4 & 84 MHz & 96 KB \\
-		\hline
-		Raspberry Pi 4B & 64-bit ARM Cortex-A72 & 1,5 GHz & do 8 GB \\
-		\hline % Pozioma linia na samym dole
-	\end{tabular}
-	
-	\vspace{0.2cm} % Delikatny odstęp między tabelą a źródłem
-	
-	% Źródło pod tabelą
-	% Otoczenie zepnie tekst do lewej i narzuci mu styl bezszeryfowy 9 pkt
-	
-	% Zamknięcie w nawiasy klamrowe i dodanie \par poprawnie ogranicza działanie \raggedright
-	{\raggedright\sffamily\footnotesize Źródło: Opracowanie własne na podstawie not aplikacyjnych producentów.\par}
-	
-\end{table}
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-Jak wynika z powyższego zestawienia w tabeli \ref{tab:mikrokontrolery}, do zadań wymagających zaawansowanego przetwarzania obrazu najlepiej sprawdzi się architektura 64-bitowa.
-
-W uzasadnionych przypadkach -- na przykład podczas prezentacji obszernych wyników pomiarów, zestawień parametrów czy macierzy -- w pracy dyplomowej dopuszcza się zastosowanie tabel o pełnej siatce, przypominających wyglądem arkusz programu Microsoft Excel. Aby uzyskać profesjonalny i estetyczny efekt w systemie \LaTeX{}, należy kierować się następującymi wytycznymi:
-
-\begin{itemize}
-	\item \textbf{Wymagane pakiety:} obsługa kolorowania komórek i wierszy nie jest domyślnie wbudowana w podstawowe środowisko tabel. Wymaga ona załadowania w preambule pakietu \texttt{xcolor}.
-	
-	\item \textbf{Kolorowanie tła:} do wyróżnienia całego wiersza służy polecenie \texttt{\textbackslash rowcolor\{...\}}, natomiast pojedynczą komórkę (np. zawierającą kluczowy wynik pomiaru) podświetla się za pomocą \texttt{\textbackslash cellcolor\{...\}}. Dobrą praktyką edytorską jest stosowanie delikatnych odcieni szarości (np. \texttt{gray!10} dla naprzemiennych wierszy oraz \texttt{gray!25} dla nagłówka) i pastelowych, niejaskrawych barw (np. \texttt{red!25}) do wyróżniania najważniejszych danych.
-	
-	\item \textbf{Zmiana koloru siatki:} aby gęsta, pełna siatka linii pionowych i poziomych nie przytłaczała czytelnika i nie odciągała wzroku od samych liczb, warto zmienić jej kolor z domyślnej czerni na jasnoszary. Służy do tego polecenie \texttt{\textbackslash arrayrulecolor\{gray!50\}}. Należy jednak pamiętać, aby tuż po zamknięciu otoczenia tabeli przywrócić czarny kolor poleceniem \texttt{\textbackslash arrayrulecolor\{black\}}, co uchroni kolejne tabele przed odziedziczeniem tego formatowania.
-	
-	\item \textbf{Przestrzeń w komórkach:} standardowe tabele w \LaTeX{}u są bardzo ciasne w pionie. Aby nadać im styl nowoczesnych arkuszy kalkulacyjnych, zaleca się bezpośrednio przed rozpoczęciem otoczenia tabeli wpisać polecenie \texttt{\textbackslash renewcommand\{\textbackslash arraystretch\}\{1.3\}}, co zwiększy wysokość wszystkich wierszy o 30 procent.
-\end{itemize}
-
-
-W tabeli \ref{tab:excel_szara_siatka} przedstawiono zbiorcze wyniki pomiarów sprawności układu napędowego.
-
-\vspace{0.2cm}  % Dodatkowy odstęp dla poprawy czytelności
-
-\begin{table}[htbp]
-	\centering
-	\renewcommand{\arraystretch}{1.3} 
-	
-	% Zmiana koloru wszystkich kresek w tabeli na jasnoszary (efekt siatki Excela)
-	\arrayrulecolor{gray!50}
-	
-	\caption{Wyniki pomiarów sprawności napędu}
-	\label{tab:excel_szara_siatka}
-	
-	\begin{tabular}{|c|l|c|c|}
-		\hline
-		\rowcolor{gray!25} 
-		\textbf{Nr} & \textbf{Punkt pracy pomiaru} & \textbf{Prąd} $I$ [A] & \textbf{Sprawność} [\%] \\ \hline
-		
-		1 & Minimalne obciążenie wału & 1,2 & 72,4 \\ \hline
-		
-		\rowcolor{gray!10} 
-		2 & Obciążenie znamionowe niskie & 2,5 & 81,1 \\ \hline
-		
-		3 & Optymalny punkt pracy układu & 4,2 & \cellcolor{red!25}\textbf{89,6} \\ \hline
-		
-		\rowcolor{gray!10} 
-		4 & Przeciążenie dopuszczalne & 5,8 & 83,3 \\ \hline
-		
-		5 & Stan bliski utykowi (maksymalny) & 8,1 & 64,2 \\ \hline
-	\end{tabular}
-	
-	% Bardzo ważne: przywrócenie czarnego koloru linii dla reszty tabel w pracy!
-	\arrayrulecolor{black}
-	
-	\vspace{0.2cm}
-	
-	{\raggedright\sffamily\footnotesize Źródło: Opracowanie własne na podstawie pomiarów laboratoryjnych.\par}
-\end{table}
-
-
-\section{Rysunki i grafiki}
-
-Rysunki, wykresy oraz schematy blokowe stanowią kluczowy element pracy dyplomowej, pozwalający na wizualizację wyników i konstrukcji. Ponieważ materiały te są bezpośrednią prezentacją autorskich osiągnięć, autorskich projektów oraz wykonanych stanowisk badawczych, kluczowe jest zadbanie o ich nienaganną jakość i wysoką rozdzielczość. Estetyczna, ostra grafika pozwala promotorowi oraz recenzentowi w pełni docenić realny wkład i trud włożony w realizację części praktycznej, podczas gdy rozmyte rysunki czy nieczytelne osie wykresów drastycznie obniżają jakość całej pracy. Należy przy tym pamiętać, że każdy zamieszczony obiekt graficzny musi zostać bezpośrednio omówiony oraz przywołany w tekście głównym za pomocą odpowiedniego odsyłacza. Poniżej znajdują się oficjalne zasady Politechniki Warszawskiej oraz praktyczne wytyczne techniczne systemu \LaTeX{} związane z ich wdrażaniem.
-
-\vspace{0.2cm}
-
-\begin{description}
-	\item[Oficjalne zasady redagowania:] \ 
-	\begin{itemize}
-		\item \textbf{Podpis rysunku:} zaleca się umieszczać go pod rysunkiem. Powinien być wyjustowany do lewej strony i zapisany czcionką bezszeryfową w rozmiarze 9~pkt. Podpis pod rysunkiem czy tytuł nad tabelą są traktowane jak tytuły rozdziałów lub nagłówki -- a w języku polskim nagłówków nie kończymy kropką.
-		
-		\item \textbf{Źródło rysunku:} jeżeli do rysunku dołączone jest źródło, należy je umieścić pod rysunkiem (z reguły pod właściwym podpisem). Obowiązuje tu identyczne formatowanie: tekst wyjustowany do lewej strony, czcionka bezszeryfowa, rozmiar 9~pkt.
-		
-		\item \textbf{Numeracja:} autor ma swobodę wyboru -- numeracja rysunków może być ciągła dla całej pracy (np. Rysunek 1, 2, 3...) lub prowadzona kolejno w poszczególnych rozdziałach (np. Rysunek 1.1, 1.2, 2.1...).
-		
-		\item \textbf{Spis rysunków:} zgodnie ze ścisłym układem pracy dyplomowej, wykaz wszystkich rysunków stanowi osobną część dokumentu i zamieszcza się go na końcu pracy (po spisie bibliograficznym oraz wykazie symboli i skrótów). W systemie \LaTeX{} generuje się go automatycznie poleceniem \texttt{\textbackslash listoffigures}.
-	\end{itemize}
-	
-	\vspace{0.2cm}
-	
-	\item[Wskazówki techniczne (na podstawie zaleceń z szablonu):] \ 
-	\begin{itemize}
-		\item \textbf{Jakość obrazu:} prace dyplomowe docelowo podlegają archiwizacji cyfrowej. Do schematów, wykresów czy struktur blokowych zdecydowanie poleca się stosowanie grafiki wektorowej (np. formaty PDF lub EPS), która zapewnia idealnie gładkie krawędzie przy każdym powiększeniu. W przypadku tradycyjnych grafik rastrowych (np. zdjęć w formacie PNG lub JPG) kluczowym wymogiem jest zapewnienie wysokiej rozdzielczości (minimalna to 300 DPI), pozwalającej na uniknięcie rozmycia obrazu i utraty szczegółów w finalnym dokumencie.
-		
-		\item \textbf{Grafiki rastrowe i zdjęcia:} Wymagają zachowania wysokich parametrów jakościowych, tak aby wszystkie prezentowane na nich elementy były w pełni wyraźne i łatwe do zinterpretowania.
-		
-		
-		\item \textbf{Wymiary i spójność:} dokument zachowuje spójność wizualną, gdy szerokości rysunków są powtarzalne. Dobrą praktyką jest zdefiniowanie 2 lub 3 standardowych szerokości relatywnych, np. \texttt{0.5\textbackslash textwidth} dla małych schematów lub \texttt{0.8\textbackslash textwidth} dla rozbudowanych wykresów.
-		
-		\item \textbf{Umiejscowienie w tekście:} rysunek musi znajdować się fizycznie w obrębie tego samego rozdziału, w którym został opisany. W systemie \LaTeX{} realizuje się to poprzez zamknięcie grafiki w otoczeniu \texttt{figure} i dodanie unikalnego znacznika \texttt{\textbackslash label\{...\}}. Pozwala to na automatyczne odwoływanie się do obiektu w tekście za pomocą polecenia \texttt{\textbackslash ref\{...\}}.
-	\end{itemize}
-\end{description}
-
-W celu weryfikacji poprawności dopasowania modelu regresji liniowej oraz sprawdzenia kluczowych założeń metody najmniejszych kwadratów (MNK), przeprowadzono pełną analizę diagnostyczną wygenerowanych reszt. Zbiorcze wyniki tej procedury przedstawiono na rysunku~\ref{fig:diagnostyka_regresji}.
-
-Wykres rozproszenia (lewy górny panel rysunku~\ref{fig:diagnostyka_regresji}) przedstawia liniową zależność zmiennej objaśnianej $Y$ od zmiennej objaśniającej $X$ wraz z dopasowaną prostą regresji (zaznaczoną czerwoną linią przerywaną). Układ punktów potwierdza silny trend liniowy w badanej próbie. Kolejnym etapem była ocena normalności rozkładu składnika losowego (reszt). Służą do tego dwa kolejne wykresy diagnostyczne: histogram reszt (prawy górny panel) oraz wykres kwantylowy Q-Q (lewy dolny panel). Kształt histogramu przypomina klasyczną krzywą Gaussa, natomiast na wykresie kwantylowym punkty empiryczne niemal idealnie pokrywają się z teoretyczną linią referencyjną. Oba te testy wizualne jednoznacznie potwierdzają, że reszty mają w przybliżeniu rozkład normalny. Ostatni z wykresów -- zależność reszt od wartości dopasowanych (prawy dolny panel) -- pozwala na ocenę homoskedastyczności, czyli stałości wariancji błędu. Równomierne, losowe rozproszenie punktów wokół czerwonej linii zero ($e=0$) świadczy o braku struktur nieliniowych oraz o stałej wariancji składnika losowego w całym zakresie predykcji.
-
-\vspace{0.2cm}
-
-\begin{figure}[htbp]
-	\centering % Wyśrodkowuje obrazek na stronie
-	
-	% Wstawienie pliku graficznego (podaj dokładną nazwę pliku)
-	% Skalowanie wykresu zbiorczego do 85% szerokości kolumny tekstu
-	\includegraphics[width=0.85\textwidth]{Rys1.png}
-	
-	% Podpis pod rysunkiem (krótki, bez kropki na końcu)
-	\caption{Wyniki analizy regresji liniowej oraz wykresy diagnostyczne reszt modelu}
-	
-	% Unikalna etykieta do odwoływania się w tekście (zawsze pod komendą \caption)
-	\label{fig:diagnostyka_regresji}
-	
-	\vspace{0.15cm} % Delikatny odstęp chroniący przed "sklejeniem" podpisu ze źródłem
-
-    % Źródło (wyjustowane do lewej, czcionka bezszeryfowa, rozmiar 9 pkt)
-
-	{\raggedright\sffamily\footnotesize Źródło:  Opracowanie własne na podstawie symulacji numerycznej w środowisku Python.\par}
-\end{figure}
-
-W pracach dyplomowych niezwykle często pojawiają się schematy struktur algorytmów, sieci neuronowych czy systemów sterowania. Poza ogólnymi zasadami umieszczania grafik, w przypadku tego typu schematów obowiązują dedykowane kryteria edytorskie i analityczne:
-
-\begin{itemize}
-	\item \textbf{Logika opisu:} opisując schemat strukturalny w tekście pracy, należy zachować naturalny kierunek przepływu sygnałów lub informacji -- najczęściej od lewej (wejścia) do prawej (wyjścia). Tekst powinien przeprowadzić czytelnika przez kolejne etapy przetwarzania danych.
-	
-	\item \textbf{Czytelność fontów wewnętrznych:} generując wykresy lub schematy za pomocą kodu (np. w bibliotece \texttt{Matplotlib}), należy upewnić się, że napisy na samym rysunku (np. nazwy warstw, opisy osi) po wstawieniu do \LaTeX{}a będą miały rozmiar zbliżony do tekstu głównego lub przypisów. Zbyt małe, nieczytelne litery na rysunku to błąd estetyczny.
-	
-	\item \textbf{Autonomiczność obiektu graficznego:} rysunek wraz z podpisem musi stanowić zrozumiałą całość. Niedopuszczalne jest wklejenie schematu sieci (np. neuronowej) bez wyjaśnienia, co oznaczają poszczególne kolory, bloki czy liczby neuronów (zarówno w tekście głównym, jak i skrótowo w podpisie).
-\end{itemize}
-
-\vspace{0.3cm}
-
-W celu realizacji zadania klasyfikacji stanów pracy układu mechatronicznego zaprojektowano sztuczną sieć neuronową typu MLP (ang. \textit{Multi-Layer Perceptron}). Strukturę topologiczną zaimplementowanego modelu przedstawiono na rysunku~\ref{fig:topologia_sieci}.
-	
-\begin{figure}[htbp]
-	\centering 
-	\includegraphics[width=0.75\textwidth]{Rys2.png}
-	\caption{Struktura sieci neuronowej z dwiema warstwami ukrytymi}
-	\label{fig:topologia_sieci}
-	\vspace{0.15cm}
-	{\raggedright\sffamily\footnotesize Źródło: Opracowanie własne przy użyciu biblioteki Matplotlib w środowisku Python.\par}
-\end{figure}
-
-Omawiany model składa się z trzech głównych segmentów: warstwy wejściowej zawierającej 4 neurony (odpowiadające parametrom wejściowym systemu), dwóch warstw ukrytych (po 5 neuronów w każdej) odpowiedzialnych za ekstrakcję cech nieliniowych, oraz dwu--neuronowej warstwy wyjściowej generującej ostateczną decyzję klasyfikatora. Połączenia synaptyczne realizowane są w architekturze każdy z każdym (ang. \textit{Fully Connected}), co pozwala na pełną propagację sygnałów w kierunku do przodu. Szary kolor warstw ukrytych na rysunku~\ref{fig:topologia_sieci} oznacza, że ich stany pośrednie nie są bezpośrednio widoczne na wyjściu systemu, a proces ich uczenia przebiegał z użyciem algorytmu wstecznej propagacji błędów.
-
-W pracach o charakterze inżynierskim na schematach blokowych~\ref{fig:uklad_regulacji}, wykresach czy architekturach sieciowych bardzo często pojawiają się oznaczenia matematyczne (np. symbole wielkości fizycznych, zmienne czasowe, transmitancje operatorowe). Absolutnym wymogiem wysokiej jakości edytorskiej jest zachowanie pełnej spójności wizualnej i merytorycznej między grafiką a tekstem rozprawy:
-
-\begin{itemize}
-	\item \textbf{Identyczny krój czcionki:} jeśli na rysunku dany symbol został wygenerowany jako kursywa matematyczna (np. $r(t)$, $G_c(s)$, $y$), to w tekście głównym ten sam symbol \textbf{musi bezwzględnie} zostać otoczony znakami dolara: \texttt{\$r(t)\$}, \texttt{\$G\_c(s)\$}, \texttt{\$y\$}. Niedopuszczalne jest stosowanie zwykłego tekstu (np. pisanie ,,r(t)'' zamiast ,,$r(t)$''), ponieważ \LaTeX{} używa zupełnie innych fontów do tekstu i do matematyki.
-	
-	\item \textbf{Jednolitość indeksów:} szczególną uwagę należy zwrócić na indeksy dolne i górne. Jeśli na schemacie blokowym widnieje oznaczenie $X_{max}$ lub $G_{p1}$, w tekście oraz we wzorach niedopuszczalne jest stosowanie zapisów typu $Xmax$ czy $G_{P1}$ (zmieniona wielkość litery w indeksie).
-	
-	\item \textbf{Obowiązek pełnej definicji:} każdy pojedynczy symbol matematyczny lub fizyczny, który został umieszczony na schemacie, musi zostać jawnie zdefiniowany i wyjaśniony w akapicie opisującym ten rysunek. Czytelnik nie może samodzielnie domyślać się znaczenia zmiennych.
-\end{itemize}
-
-\vspace{0.2cm}
-
-Podstawowym elementem projektowanego systemu jest układ regulacji automatycznej, którego schemat blokowy przedstawiono na rysunku~\ref{fig:uklad_regulacji}.
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.90\textwidth]{Rys3.png}
-	\caption{Schemat blokowy zamkniętego układu regulacji automatycznej z ujemnym sprzężeniem zwrotnym}
-	\label{fig:uklad_regulacji}
-	\vspace{0.15cm} 
-	{\raggedright\sffamily\footnotesize Źródło: Opracowanie własne w środowisku Python przy użyciu pakietu Matplotlib.\par}
-\end{figure}
-
-
-Działanie układu opiera się na ciągłym pomiarze sygnału wyjściowego $y(t)$, który poprzez pętlę sprzężenia zwrotnego trafia do węzła sumacyjnego. Następuje tam porównanie wartości rzeczywistej z sygnałem zadanym $r(t)$. Wynikiem tego działania jest uchyb regulacji $e(t)$, definiowany zależnością:
-\begin{equation}
-	e(t) = r(t) - y(t).
-\end{equation}
-Uchyb ten podawany jest na wejście bloku regulatora o transmitancji operatorowej $G_c(s)$, którego zadaniem jest wygenerowanie odpowiedniego sygnału sterującego $u(t)$ dla obiektu $G_p(s)$.
-
-Przy zmianie rozmiaru grafiki w kodzie (\texttt{width}) nigdy nie należy zmieniać ręcznie wysokości w sposób, który zniekształciłby lub rozciągnął obraz. Jeżeli rysunek jest kopią, przerysowaniem lub adaptacją, na końcu podpisu należy bezwzględnie podać źródło za pomocą polecenia \texttt{\textbackslash cite}. Każdy rysunek musi posiadać swoje odwołanie w tekście go poprzedzającym (np. \textit{,,...co przedstawiono na rys.~\textbackslash ref\{fig:quadrocopter\_lot\}''}).
-
-Współczesne podejście do syntezy zaawansowanych algorytmów sterowania dla obiektów latających typu Quadrokopter zostało szczegółowo przedstawione w pracy~\cite{bonislawski2014projekt}. Na rysunku~\ref{fig:quadrocopter_lot} pokazano quadrocopter w czasie lotu.
-
-\vspace{0.2cm}
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.65\textwidth]{Rys4.png}
-	\caption{Quadrocopter w trakcie lotu}
-	\label{fig:quadrocopter_lot}
-	\vspace{0.15cm}
-	{\raggedright\sffamily\footnotesize Źródło:~\cite[s.~97]{bonislawski2014projekt}.\par}
-\end{figure}
-
-W przypadku wykorzystania w pracy dyplomowej materiałów graficznych wygenerowanych przez sztuczną inteligencję (AI), kluczową kwestią jest zachowanie pełnej przejrzystości. Każdy taki rysunek musi zostać jednoznacznie oznaczony, aby czytelnik oraz recenzent nie zostali wprowadzeni w błąd, że jest to autorska fotografia rzeczywistego obiektu laboratoryjnego lub tradycyjny schemat inżynierski. 
-
-Wszelkie ilustracje tego typu powinny być traktowane jako specyficzna forma syntezy wizualnej. Powszechnie akceptowaną formą opisu jest wskazanie w źródle, że grafika stanowi opracowanie własne z jawnym określeniem użytego narzędzia (np. Gemini). 
-
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.65\textwidth]{Rys5.png}
-	\caption{Wizualizacja koncepcyjna quadrocoptera w trakcie lotu}
-	\label{fig:quadrocopter_ai}
-	\vspace{0.15cm}
-	{\raggedright\sffamily\footnotesize Źródło: Opracowanie własne przy użyciu narzędzia AI (Gemini).\par}
-\end{figure}
-
-
-
-\section{Kody źródłowe}
-
-W interdyscyplinarnych projektach realizowanych na Wydziale Mechatroniki, integralną częścią pracy dyplomowej jest bardzo często warstwa aplikacyjna -- obejmująca implementację algorytmów sterowania, oprogramowania systemów wbudowanych czy skryptów analizy danych. Wklejanie kodu źródłowego bezpośrednio w strukturę zwykłego tekstu drastycznie obniża czytelność dokumentacji i jest uznawane za błąd edytorski.
-
-Warto podkreślić, że oficjalne Zarządzenie Rektora Politechniki Warszawskiej w sprawie zasad przygotowywania prac dyplomowych~\cite{rektorPW2022} nie definiuje szczegółowych wymagań ani specyficznych regulacji dotyczących sposobu formatowania kodów programistycznych. Brak sztywnych wytycznych nie zwalnia jednak autora z dbałości o jakość techniczną pracy. W tym zakresie należy bezwzględnie kierować się dobrymi praktykami inżynierskimi oraz standardami publikacyjnymi, których celem jest zapewnienie maksymalnej przejrzystości, estetyki i czytelności prezentowanych struktur algorytmicznych.
-
-Do profesjonalnego i zautomatyzowanego składu kodów w systemie \LaTeX{} standardowym pakietem jest \texttt{listings}. Wymusza on poprawne formatowanie techniczne, izoluje kody od narracji głównej oraz ułatwia analizę logiki programistycznej. Poniżej zestawiono kluczowe zasady, którymi należy się kierować podczas integracji fragmentów oprogramowania z tekstem pracy:
-
-\begin{itemize}
-	\item \textbf{Składnia i czytelność:} pakiet automatycznie rozpoznaje słowa kluczowe, komentarze i ciągi znaków dla wielu języków programowania (np. C++, Python, MATLAB, Java). Dobrą praktyką jest włączenie numeracji linii po lewej stronie, co znacząco ułatwia odwoływanie się do konkretnych instrukcji w tekście głównym pracy.
-	
-	\item \textbf{Podpisy i numeracja:} fragmenty kodu traktuje się jako niezależne byty edytorskie -- obok tabel i rysunków. Powinny one posiadać własny, numerowany podpis (z reguły umieszczany nad blokiem kodu). %Pakiet pozwala na łatwe wygenerowanie osobnego spisu kodów źródłowych komendą \texttt{\textbackslash lstlistoflistings}.
-	
-	\item \textbf{Sposób dołączania i archiwizacji kodu:} krótkie fragmenty (do kilkunastu linii) o charakterze ilustracyjnym zamieszcza się bezpośrednio w treści rozdziałów, zamykając je w otoczeniu \texttt{\textbackslash begin\{lstlisting\}} \dots \texttt{\textbackslash end\{lstlisting\}}. W przypadku, gdy kod źródłowy programu jest obszerny i jego obecność w tekście głównym zaburzałaby czytelność głównych rozdziałów, zgodnie z zatwierdzoną przez Rektora strukturą dokumentu, można umieścić go na samym końcu pracy jako Załącznik. Fakt ten wymaga formalnego odnotowania w \textit{Wykazie załączników},  umieszczonym w dokumencie. Z kolei kompletne kody źródłowe, całe repozytoria, bazy danych lub duże modele obliczeniowe \textbf{należy bezwzględnie wgrać do uczelnianego systemu USOS APD jako oficjalny załącznik cyfrowy} (w formacie skompresowanym, np. \texttt{.zip}) do pracy dyplomowej. Wszelkie techniczne i specyficzne wymagania w tym zakresie dyplomant powinien każdorazowo skonsultować z promotorem pracy.
-
-\end{itemize}
-
-W symulacjach numerycznych kluczowe znaczenie ma poprawna oraz przejrzysta implementacja algorytmów obliczeniowych. Jako wzór poprawnego sformatowania i osadzenia kodu w strukturze tekstu pracy dyplomowej, kod źródłowy~\ref{lst:trapezy} przedstawia autorską implementację metody trapezów, służącej do numerycznego całkowania funkcji jednej zmiennej.
-\newpage 
-\begin{lstlisting}[language=Python, caption={Implementacja numerycznego całkowania metodą trapezów}, label={lst:trapezy}]
-import numpy as np
-
-def metoda_trapezow(f, a, b, n):
-	# Numeryczne obliczanie całki oznaczonej funkcji f(x)
-	# w przedziale [a, b] przy użyciu n podprzedziałów.
-
-	x = np.linspace(a, b, n + 1)
-	y = f(x)
-	h = (b - a) / n
-
-	# Obliczenie wartości calki zgodnie z formułą kwadratury
-	calka = h * (0.5 * y[0] + np.sum(y[1:-1]) + 0.5 * y[-1])
-	return calka
-\end{lstlisting}
-
-\vspace{0.2cm}
-
-Zaprezentowany kod źródłowy~\ref{lst:trapezy} wykorzystuje zoptymalizowaną bibliotekę \texttt{NumPy} do efektywnego operowania na wektorach danych bez konieczności stosowania pętli iteracyjnych \texttt{for}. Funkcja \texttt{np.linspace} służy do równomiernego podziału dziedziny całkowania na $n$ podprzedziałów o jednostkowej szerokości kroków $h$. 
-
-Ostateczny wynik obliczeń jest wyznaczany poprzez zsumowanie wartości funkcji na krańcach przedziałów ($y[0]$ oraz $y[-1]$) pomnożonych przez wagę $0,5$ oraz wartości wewnętrznych z wagą $1,0$. Podejście to bezpośrednio odzwierciedla matematyczne sformułowanie metody trapezów. Pełny skrypt zawierający funkcje testowe oraz procedurę analizy błędów został przedstawiony w załączniku~\ref{zal:analiza_bledow}.
-
-\section{Bibliografia}
-
-Zgodnie z oficjalnymi wytycznymi Rektora Politechniki Warszawskiej~\cite{rektorPW2022} oraz założeń niniejszego szablonu, formatowanie bibliografii oraz odwołań literaturowych opiera się na kilku kluczowych zasadach podzielonych na obszar wymogów formalnych oraz wskazówek technicznych.
-
-
-\begin{description}
-	\item[Oficjalne wymogi edytorskie:] \ 
-	\begin{itemize}
-		\item \textbf{Sposób cytowania:} dyplomant ma do wyboru dwa dopuszczalne systemy oznaczania źródeł: styl numeryczny (zgodny z polską normą, gdzie odwołania mają postać np.~\cite{wroblewski2023}) lub styl harwardzki (w którym odwołania przyjmują postać nazwiska autora oraz roku wydania publikacji).
-		
-		\item \textbf{Kolejność w spisie końcowym:} bezwzględnym wymogiem uczelnianym jest, aby wykaz literatury umieszczony na końcu pracy był ułożony w porządku alfabetycznym według nazwisk autorów (a nie według kolejności cytowania w tekście).
-	\end{itemize}
-
-\item[Wskazówki techniczne dla systemu \LaTeX{}:]\
-	\begin{itemize}
-		\item \textbf{Pełna automatyzacja:} zarządzanie bibliografią w szablonie realizowane jest automatycznie. Wszystkie noty bibliograficzne (dane bibliograficzne książek, artykułów naukowych czy dokumentacji technicznych) przechowywane są w zewnętrznym pliku bazy danych z rozszerzeniem \texttt{.bib} (np. \texttt{thesis-references.bib}).
-		
-		\item \textbf{Mechanizm odwołań:} do przywoływania konkretnych źródeł w tekście służy polecenie \texttt{\textbackslash cite\{znacznik\}}. System umożliwia jednoczesne cytowanie kilku pozycji (np. \texttt{\textbackslash cite\{znacznik1, znacznik2\}}) oraz wskazywanie konkretnych jednostek redakcyjnych, np. stron lub rozdziałów (\texttt{\textbackslash cite[s.\textasciitilde 38]\{znacznik\}}). 
-		
-		\item \textbf{Eliminacja błędów typograficznych:} aby uniknąć pozostawienia odnośnika bibliograficznego na początku nowej linii, przed poleceniem cytowania należy bezwzględnie stosować twardą spację, wpisując w kodzie: \texttt{\textasciitilde\textbackslash cite\{znacznik\}}.
-		
-		\item \textbf{Dynamiczna zawartość spisu:} do końcowego wykazu literatury trafiają wyłącznie te pozycje, do których autor faktycznie odwołał się w treści pracy. Pozwala to na gromadzenie w pliku \texttt{.bib} szerokiej bazy źródłowej, bez ryzyka sztucznego i niepoprawnego zawyżania spisu końcowego.
-		
-		\item \textbf{Pozorny nieład numeryczny:} ponieważ bibliografia automatycznie sortuje alfabetycznie pozycje w spisie końcowym, w samym tekście numery odwołań mogą pojawiać się w sposób nieliniowy i niemonotoniczny (np. w danym akapicie pojawi się odwołanie \texttt{[5]}, a w kolejnym \texttt{[2]}). Jest to zjawisko całkowicie prawidłowe i nie należy go ręcznie modyfikować.
-	\end{itemize}
-\end{description}
-
-\vspace{0.5cm}
-
-W oficjalnym układzie pracy dyplomowej, rozdział \textit{Bibliografia} (w szablonie generowany automatycznie komendą \texttt{\textbackslash printbibliography} pod nazwą \textit{Literatura}) umiejscowiony jest bezpośrednio po głównych rozdziałach merytorycznych i podsumowaniu. Zastosowanie nagłówka ,,Literatura'' zamiast domyślnego określenia ,,Bibliografia'' jest opcjonalnym zabiegiem, pozwalającym na elastyczne dostosowanie nazewnictwa spisu. Tuż po nim (z odstępem pustej strony), należy umieścić \textit{Wykaz symboli i skrótów}.
-
-Należy pamiętać, że \textbf{przed przystąpieniem do generowania spisu literatury, należy bezwzględnie zmienić domyślne narzędzie} \textit{BibTeX} w ustawieniach swojego edytora na \textbf{Biber}. 
-	
-\vspace{0.5cm}
-
-\textbf{Przykłady prawidłowego odwoływania się do literatury i źródeł w treści pracy:}
-
+Przy tworzeniu wątku w paśmie dynamicznym przydzielana jest mu tzw. wartość bazowa priorytetu (\textit{base priority}), obliczana na podstawie klasy priorytetu procesu oraz priorytetu wątku wewnątrz tej klasy. Aby zapewnić wysoką responsywność interaktywną i zapobiegać zbyt długiemu oczekiwaniu zadań (\textit{starvation}), planista stosuje mechanizm dynamicznego wzmacniania priorytetu (\textit{priority boosting}). W systemie istnieje sześć głównych rodzajów zdarzeń, które wyzwalają tymczasowe podbicie priorytetu wątku \cite{bsodTutorialsQuantumBoost}:
 \begin{enumerate}
-	\item \textbf{Odniesienie ogólne (synteza literatury na końcu zdania):} \\
-	,,W literaturze podkreśla się, że nowoczesne układy wymagają podejścia interdyscyplinarnego \parencite{wroblewski2023}''.
-	
-	\item \textbf{Odwołanie bezpośrednie do konkretnej pracy oraz dokumentacji:} \\
-	,,Zaimplementowany algorytm bazuje na rozwiązaniu opisanym w pracy \cite{kowalski2025}, natomiast pełną specyfikację mikrokontrolera zaczerpnięto z dokumentacji technicznej \parencite{stmicro2024}''.
-	
-	\item \textbf{Przywołanie podstaw teoretycznych i monografii:} \\
-	,,Podstawy teoretyczne dotyczące zastosowania algorytmów sztucznej inteligencji w przemysłowych systemach kontroli jakości zaczerpnięto z opracowania~\cite{zielinski2024vision}''.
-	
-	\item \textbf{Cytowanie dokumentu patentowego:} \\
-	,,Podczas projektowania układu jezdnego robota mobilnego inspirowano się rozwiązaniem konstrukcyjnym o zwiększonej przyczepności, które zostało zastrzeżone w patencie~\cite{kowalskiPatent2024}''.
-	
-	\item \textbf{Odesłanie do szczegółowego omówienia danej metody:} \\
-	,,Współczesne podejście do syntezy zaawansowanych algorytmów sterowania dla obiektów latających typu Quadrokopter zostało szczegółowo przedstawione w pracy~\cite{nowak2025control}''.
-\end{enumerate}	
-	
-	
-	
+	\item Zakończenie asynchronicznej operacji wejścia/wyjścia (I/O completion).
+	\item Wybudzenie wątku przez obiekty synchronizacji (np. semafory, zdarzenia).
+	\item Zakończenie oczekiwania na zasoby warstwy wykonawczej (Executive resources).
+	\item Działanie w ramach procesu pierwszoplanowego (Foreground process).
+	\item Wybudzenie w celu obsługi zdarzeń interfejsu graficznego (GUI windowing activity).
+	\item Interwencja usługi \textit{Balance Set Manager}, chroniąca przed głodzeniem poprzez wywindowanie priorytetu zablokowanego wątku do wartości 15 \cite{duffyBalanceSetManager}.
+\end{enumerate}
+
+Po otrzymaniu wzmocnienia, kwant czasu (ang. \textit{quantum}) wątku ulega wyzerowaniu. Kiedy wątek w pełni wykorzysta nowo przydzielony kwant, system stosuje mechanizm degradacji (\textit{priority decay}) – jego priorytet jest zmniejszany o 1. Proces ten powtarza się przy każdym kolejnym wyczerpaniu kwantu, aż wartość spadnie z powrotem do nominalnego priorytetu bazowego \cite{bsodTutorialsQuantumBoost}.
+
+\subsection{Wybór procesu i struktury danych}
+Kernel utrzymuje niezależne struktury danych dla każdego procesora logicznego, zgrupowane wewnątrz bloku \textit{Kernel Processor Control Block} (KPRCB) \cite{reactosThrdschdC}. Serce tej struktury stanowią kolejki gotowości (\textit{Dispatcher Ready Queues}), zaimplementowane jako tablica 32 dwukierunkowych list powiązanych – po jednej dla każdego poziomu priorytetu. Nowe lub wybudzone wątki dodawane są na koniec listy odpowiadającej ich priorytetowi.
+
+W celu optymalizacji wyboru następnego zadania, dyspozytor unika czasochłonnego iterowania po listach. Utrzymuje on pojedynczą, 32-bitową liczbę, zwaną \textit{Ready Summary}. Każdy bit tej zmiennej powiązany jest z jedną kolejką. Jeśli dana kolejka posiada przynajmniej jeden wątek gotowy do natychmiastowego uruchomienia, odpowiadający jej bit ustawiany jest na wartość 1. Jeżeli kolejka jest pusta, bit przyjmuje wartość 0 \cite{solomon2000threadScheduling}.
+
+Dzięki takiej architekturze, problem wyboru następnego wątku sprowadza się do odnalezienia najstarszego ustawionego bitu (ang. \textit{most significant set bit}) w zmiennej \textit{Ready Summary}. Jest to operacja matematyczna, której złożoność czasowa wynosi $O(1)$. W architekturach sprzętowych z rodziny x86/amd64 poszukiwanie to realizowane jest za pomocą pojedynczej instrukcji procesora – BSR (\textit{Bit Scan Reverse}). Pozwala to w bardzo krótkim czasie zidentyfikować najwyższą niepustą kolejkę, pobrać z niej pierwszy oczekujący wątek i zainicjować przełączenie kontekstu \cite{reactosKeX}.
+
+
+\section{Systemy z rodziny BSD na przykładzie FreeBSD}
+W nowoczesnych wersjach systemu FreeBSD (począwszy od wydania 5.2) domyślnym podsystemem szeregowania zadań jest planista ULE \cite{roberson2003ule}. Zastąpił on historyczny algorytm wywodzący się z systemu 4.4BSD, który ze względu na globalną kolejkę uruchomieniową oraz konieczność okresowego przeliczania priorytetów wszystkich zadań w systemie (złożoność $O(n)$) nie skalował się efektywnie w środowiskach wieloprocesorowych (SMP) \cite{roberson2003ule, mckusick2014freebsd}. Nazwa ULE nie jest akronimem -- pochodzi od trzech ostatnich liter angielskiego słowa \textit{schedule} (powstałego po usunięciu znaku podkreślenia z nazwy pliku źródłowego \texttt{sched\_ule.c}) \cite{roberson2003ule, freebsdSchedUleC}. Analogicznie jak w systemie Windows, podstawową jednostką podlegającą szeregowaniu we FreeBSD nie jest cały proces (\texttt{struct proc}), lecz pojedynczy wątek jądra (\texttt{struct thread}), posiadający własną strukturę metadanych planisty \texttt{struct td\_sched} \cite{freebsdSchedUleC}.
+
+Architektura FreeBSD definiuje 256 dyskretnych poziomów priorytetów (od 0 do 255). Zgodnie z klasyczną konwencją systemów UNIX, niższa wartość liczbowa oznacza wyższy priorytet wykonywania \cite{mckusick2014freebsd}. Przestrzeń ta podzielona jest na cztery główne klasy \cite{mckusick2014freebsd}:
+\begin{itemize}
+	\item \textbf{Poziomy 0--47 (Wątki przerwań i jądra):} Najwyższe priorytety nadawane podsystemom jądra, gwarantujące bezwzględne prawo wywłaszczania procesów przestrzeni użytkownika.
+	\item \textbf{Poziomy 48--79 (Wątki czasu rzeczywistego):} Zadania o krytycznym znaczeniu czasowym (\textit{real-time}), których priorytety są nadawane bezpośrednio przez aplikacje i nie podlegają kwantowaniu czasu.
+	\item \textbf{Poziomy 120--223 (Wątki podziału czasu):} Pasmo przeznaczone dla standardowych procesów użytkownika (\textit{timesharing}), w którym priorytet wyliczany jest dynamicznie przez planistę.
+	\item \textbf{Poziomy 224--255 (Wątki bezczynności):} Zarezerwowane dla zadań wykonywanych wyłącznie przy braku jakichkolwiek innych gotowych wątków w systemie (\textit{idle threads}).
+\end{itemize}
+
+W momencie utworzenia nowego procesu za pomocą wywołania \texttt{fork()}, wątek potomny dziedziczy początkowy poziom priorytetu oraz skumulowaną historię interaktywności bezpośrednio po swoim procesie macierzystym (np. powłoce systemowej) \cite{roberson2003ule}. Sprawia to, że nowo powołane zadania zazwyczaj rozpoczynają pracę z wysokim priorytetem charakterystycznym dla aplikacji interaktywnych. W trakcie dalszego działania wątku w paśmie podziału czasu (120--223), jego priorytet ulega ciągłym zmianom w zależności od zachowania zadania oraz przypisanego mu przez użytkownika parametru \textit{nice} (z przedziału od -20 do +20) \cite{roberson2003ule, mckusick2014freebsd}.
+
+Kluczowym mechanizmem modyfikującym priorytet w czasie pracy jest heurystyka oceny interaktywności, realizowana przez funkcję \texttt{sched\_interact\_score()} \cite{freebsdSchedUleC}. Planista monitoruje w strukturze \texttt{td\_sched} skumulowany czas dobrowolnego uśpienia wątku ($T_{\text{sleep}}$) oraz czas jego faktycznej pracy na procesorze ($T_{\text{run}}$) w obrębie ruchomego okna historii (ograniczonego stałą \texttt{SCHED\_SLP\_RUN\_MAX}) \cite{roberson2003ule, freebsdSchedUleC}. Oznaczając przez $M$ połowę maksymalnej skali interaktywności, wskaźnik $S$ wyznaczany jest zależnie od relacji obu czasów. Gdy czas snu przewyższa czas pracy ($T_{\text{sleep}} > T_{\text{run}}$), wskaźnik przyjmuje postać \cite{roberson2003ule}:
+
+$$S = \left\lfloor \frac{M \cdot T_{\text{run}}}{T_{\text{sleep}}} \right\rfloor$$
+
+Natomiast gdy dominuje czas obliczeń ($T_{\text{run}} \ge T_{\text{sleep}}$), wartość obliczana jest ze wzoru \cite{roberson2003ule}:
+
+$$S = M + \left\lfloor \frac{M \cdot (T_{\text{run}} - T_{\text{sleep}})}{T_{\text{run}}} \right\rfloor$$
+
+Im niższa jest wyliczona wartość $S$, tym wyższą interaktywnością cechuje się zadanie. Jeżeli wskaźnik $S$ spadnie poniżej zdefiniowanego progu, wątek zostaje uznany za interaktywny, a jego priorytet jest wyznaczany proporcjonalnie do wyniku interaktywności (z uwzględnieniem modyfikatora \textit{nice}) \cite{roberson2003ule}. Jeśli jednak proces (np. kompilator uruchomiony z interaktywnej powłoki) zacznie intensywnie obciążać jednostkę obliczeniową bez dobrowolnego zasypiania, wartość $T_{\text{run}}$ szybko zdominuje $T_{\text{sleep}}$. Przekroczenie progu interaktywności spowoduje degradację zadania do kategorii wsadowej (\textit{batch}). Dla takich wątków priorytet wewnątrz pasma podziału czasu rośnie (czyli staje się mniej korzystny) wraz z liczbą wyczerpywanych taktów zegara statystycznego (\texttt{statclock}) oraz dodatnią wartością \textit{nice} \cite{roberson2003ule, mckusick2014freebsd}.
+
+\subsection{Wybór procesu i struktury danych}
+Aby wyeliminować rywalizację o blokady między rdzeniami i osiągnąć złożoność czasową $O(1)$, scheduler ULE utrzymuje osobny zestaw kolejek uruchomieniowych \texttt{struct tdq} dla każdego procesora logicznego (w tablicy \texttt{tdq\_cpu}) \cite{freebsdSchedUleC}. Wewnątrz każdego kontenera (zestawu) \texttt{tdq} znajdują się trzy wyspecjalizowane struktury \texttt{struct runq}:
+\begin{enumerate}
+	\item \texttt{tdq\_realtime} -- przechowuje wątki przerwań, zadania czasu rzeczywistego oraz wątki podziału czasu zaklasyfikowane jako interaktywne \cite{mckusick2014freebsd, freebsdSchedUleC}.
+	\item \texttt{tdq\_timeshare} -- gromadzi nieinteraktywne (wsadowe) wątki podziału czasu. Działa ona jako kolejka kalendarzowa (\textit{calendar queue}), wykorzystująca dwa rotujące indeksy: zapisu (\texttt{tdq\_idx}) oraz odczytu (\texttt{tdq\_ridx}). Wstawiane wątki umieszczane są w odległości od \texttt{tdq\_idx} zależnej od ich priorytetu, natomiast pobieranie odbywa się od pozycji \texttt{tdq\_ridx}, która przesuwa się z upływem czasu. Gwarantuje to, że każde zadanie wsadowe zostanie uruchomione podczas pełnego obrotu wskaźnika, co całkowicie zapobiega zjawisku głodzenia (\textit{starvation}) bez potrzeby globalnego przeliczania priorytetów \cite{mckusick2014freebsd, freebsdSchedUleC}.
+	\item \texttt{tdq\_idle} -- gromadzi wątki bezczynności, uruchamiane wyłącznie wtedy, gdy dwie powyższe struktury są całkowicie puste \cite{freebsdSchedUleC}.
+\end{enumerate}
+
+Na najniższym poziomie każda z trzech instancji \texttt{struct runq} agreguje 256 poziomów priorytetów w 64 dwukierunkowe listy ogonowe (\texttt{rq\_queues[64]}). Samo odnalezienie niepustej kolejki wewnątrz wybranej struktury realizowane jest w czasie stałym $O(1)$ przez funkcję \texttt{runq\_choose()}, która odczytuje 64-bitowy wektor stanu \texttt{rq\_status}. Pozycja pierwszego ustawionego bitu bezpośrednio wskazuje indeks najważniejszej niepustej listy, z której pobierany jest pierwszy oczekujący wątek \cite{mckusick2014freebsd, freebsdRunqH}. Jest to bardzo podobne rozwiązanie optymalizacyjne jak w systemach z rodziny Windows.

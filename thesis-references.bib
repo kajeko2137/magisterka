@@ -1,4 +1,8 @@
-% Artykuł naukowy / Raport techniczny (Article)
+% ============================================================================
+% Źródła dotyczące planisty procesora w systemie Linux (Scheduler EEVDF)
+% ============================================================================
+
+% Artykuł naukowy / Raport techniczny (Article) - [15] w raporcie
 @article{stoica1995eevdf,
 	author    = {Stoica, Ion and Abdel-Wahab, Hussein},
 	title     = {Earliest Eligible Virtual Deadline First: A Flexible and Accurate Mechanism for Proportional Share Resource Allocation},
@@ -7,7 +11,7 @@
 	url       = {https://www.semanticscholar.org/paper/Earliest-Eligible-Virtual-Deadline-First-%3A-A-and-Stoica-Abdel-Wahab/9d07417330e3d37a5767359531b4adc4c27a5349}
 }
 
-% Strona internetowa, dokumentacja (Online)
+% Strona internetowa, dokumentacja (Online) - [1] w raporcie
 @online{linuxdocEEVDF,
 	author    = {{The Linux Kernel Developers}},
 	title     = {EEVDF Scheduler -- The Linux Kernel documentation},
@@ -16,7 +20,7 @@
 	urldate   = {2026-10-10}
 }
 
-% Strona internetowa, artykuł techniczny (Online)
+% Strona internetowa, artykuł techniczny (Online) - [4] w raporcie
 @online{kernelInternalsEEVDF,
 	author    = {{Linux Kernel Internals}},
 	title     = {EEVDF -- Linux Kernel Internals},
@@ -25,7 +29,25 @@
 	urldate   = {2026-10-10}
 }
 
-% Strona internetowa, kod źródłowy jądra (Online)
+% Strona internetowa, encyklopedia (Online) - [13] w raporcie
+@online{wikiScheduling,
+	author    = {{Wikipedia contributors}},
+	title     = {Scheduling (computing) -- {Wikipedia, The Free Encyclopedia}},
+	year      = {2026},
+	url       = {https://en.wikipedia.org/wiki/Scheduling_(computing)},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, kod źródłowy jądra (Online) - [18] w raporcie
+@online{linuxSchedH,
+	author    = {Torvalds, Linus and contributors},
+	title     = {linux/include/linux/sched.h at master},
+	year      = {2024},
+	url       = {https://github.com/torvalds/linux/blob/master/include/linux/sched.h},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, kod źródłowy jądra (Online) - [19]/[23] w raporcie
 @online{linuxFairC,
 	author    = {Torvalds, Linus and contributors},
 	title     = {linux/kernel/sched/fair.c at master},
@@ -34,12 +56,21 @@
 	urldate   = {2026-10-10}
 }
 
-% Strona internetowa, lista dyskusyjna jądra (Linux Kernel Mailing List) (Online)
+% Strona internetowa, lista dyskusyjna jądra (LKML) (Online) - [26] w raporcie
 @online{lkmlRunToParity,
 	author    = {Zijlstra, Peter},
 	title     = {[sched/core] sched: Move PLACE\_LAG and RUN\_TO\_PARITY to sysctl},
 	year      = {2025},
 	url       = {https://lkml.org/lkml/2025/2/11/1991},
+	urldate   = {2026-10-10}
+}
+
+% Strona internetowa, lista dyskusyjna jądra (LKML) (Online) - [38] w raporcie
+@online{lkmlSchedV612,
+	author    = {Molnar, Ingo},
+	title     = {[GIT PULL] Scheduler changes for v6.12},
+	year      = {2024},
+	url       = {https://lkml.org/lkml/2024/9/19/397},
 	urldate   = {2026-10-10}
 }
 
@@ -123,4 +154,52 @@
 	year      = {2006},
 	url       = {https://joeduffyblog.com/2006/08/22/priorityinduced-starvation-why-sleep1-is-better-than-sleep0-and-the-windows-balance-set-manager/},
 	urldate   = {2026-10-11}
+}
+
+% ============================================================================
+% Źródła dotyczące planisty procesora w systemie FreeBSD (Scheduler ULE)
+% ============================================================================
+
+% Publikacja konferencyjna (InProceedings)
+@inproceedings{roberson2003ule,
+	author    = {Roberson, Jeff},
+	title     = {{ULE}: A Modern Scheduler for {FreeBSD}},
+	booktitle = {Proceedings of the BSD Conference 2003 (BSDCon '03)},
+	publisher = {USENIX Association},
+	year      = {2003},
+	pages     = {17--28},
+	url       = {https://www.usenix.org/legacy/event/bsdcon03/tech/full_papers/roberson/roberson.pdf},
+	urldate   = {2026-10-15}
+}
+
+% Rozdział w monografii (InBook)
+@inbook{mckusick2014freebsd,
+	author    = {McKusick, Marshall Kirk and Neville-Neil, George V. and Watson, Robert N. M.},
+	title     = {Thread Scheduling},
+	booktitle = {The Design and Implementation of the FreeBSD Operating System},
+	edition   = {2},
+	publisher = {Addison-Wesley Professional},
+	year      = {2014},
+	chapter   = {4.4},
+	isbn      = {978-0321968975},
+	url       = {https://www.informit.com/articles/article.aspx?p=2249436&seqNum=4},
+	urldate   = {2026-10-15}
+}
+
+% Strona internetowa, kod źródłowy jądra (Online)
+@online{freebsdSchedUleC,
+	author    = {Roberson, Jeff and {The FreeBSD Project}},
+	title     = {sys/kern/sched\_ule.c -- {FreeBSD} Kernel Source Tree},
+	year      = {2026},
+	url       = {https://cgit.freebsd.org/src/tree/sys/kern/sched_ule.c},
+	urldate   = {2026-10-15}
+}
+
+% Strona internetowa, kod źródłowy jądra (Online)
+@online{freebsdRunqH,
+	author    = {{The FreeBSD Project}},
+	title     = {sys/sys/runq.h -- {FreeBSD} Kernel Source Tree},
+	year      = {2026},
+	url       = {https://cgit.freebsd.org/src/tree/sys/sys/runq.h},
+	urldate   = {2026-10-15}
 }
