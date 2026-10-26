@@ -1,0 +1,3 @@
+source=scx-fallback
+header=/home/kajeko/Kimi's Corner/magisterka/implementacja/tls/../scx/scheds/vmlinux/vmlinux.h
+kernel=6.12.113+deb13-amd64
