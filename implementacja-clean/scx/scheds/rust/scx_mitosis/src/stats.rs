@@ -1,0 +1,268 @@
+use std::collections::BTreeMap;
+use std::io::Write;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
+use std::time::Duration;
+
+use anyhow::Result;
+use serde::Deserialize;
+use serde::Serialize;
+
+use scx_stats::prelude::*;
+use scx_stats_derive::Stats;
+use scx_stats_derive::stat_doc;
+
+use crate::DistributionStats;
+
+#[stat_doc]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Stats)]
+#[stat(_om_prefix = "s_")]
+#[stat(top)]
+pub struct SubcellMetrics {
+    #[stat(desc = "Subcell name")]
+    pub name: String,
+    #[stat(desc = "Number of cpus")]
+    pub num_cpus: u32,
+    #[stat(desc = "CPU utilization %")]
+    pub util_pct: f64,
+    #[stat(desc = "Borrowed CPU time % of running")]
+    pub demand_borrow_pct: f64,
+    #[stat(desc = "Lent CPU time %")]
+    pub lent_pct: f64,
+    #[stat(desc = "EWMA-smoothed utilization %")]
+    pub smoothed_util_pct: f64,
+    #[stat(desc = "Running time in this interval")]
+    pub running_ns: u64,
+    #[stat(desc = "Borrowed running time in this interval")]
+    pub borrowed_ns: u64,
+    #[stat(desc = "Lent running time in this interval")]
+    pub lent_ns: u64,
+    #[stat(desc = "Time spent runnable but waiting for a CPU in this interval")]
+    pub queued_ns: u64,
+    #[stat(desc = "Average runnable tasks over the interval (running + queued)")]
+    pub load: f64,
+    #[stat(desc = "EWMA-smoothed average runnable tasks")]
+    pub smoothed_load: f64,
+    #[stat(desc = "Demand: sum of the tasks' unconstrained CPU usage, in CPUs")]
+    pub demand: f64,
+    #[stat(desc = "EWMA-smoothed demand")]
+    pub smoothed_demand: f64,
+}
+
+impl SubcellMetrics {
+    pub fn update_name_and_cpus(&mut self, name: &str, num_cpus: u32) {
+        self.name = name.to_string();
+        self.num_cpus = num_cpus;
+    }
+
+    pub fn update_demand(
+        &mut self,
+        util_pct: f64,
+        demand_borrow_pct: f64,
+        lent_pct: f64,
+        running_ns: u64,
+        borrowed_ns: u64,
+        lent_ns: u64,
+        queued_ns: u64,
+        load: f64,
+        demand: f64,
+    ) {
+        self.util_pct = util_pct;
+        self.demand_borrow_pct = demand_borrow_pct;
+        self.lent_pct = lent_pct;
+        self.running_ns = running_ns;
+        self.borrowed_ns = borrowed_ns;
+        self.lent_ns = lent_ns;
+        self.queued_ns = queued_ns;
+        self.load = load;
+        self.demand = demand;
+    }
+}
+
+#[stat_doc]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Stats)]
+#[stat(_om_prefix = "c_")]
+#[stat(top)]
+pub struct CellMetrics {
+    #[stat(desc = "Number of cpus")]
+    pub num_cpus: u32,
+    #[stat(
+        desc = "Cgroup path of this cell, relative to the cgroup root (\"/\" for the root cell)",
+        _om_skip
+    )]
+    pub cgroup_path: String,
+    #[stat(desc = "Local queue %")]
+    pub local_q_pct: f64,
+    #[stat(desc = "CPU queue %")]
+    pub cpu_q_pct: f64,
+    #[stat(desc = "Cell queue %")]
+    pub cell_q_pct: f64,
+    #[stat(desc = "Borrowed CPU %")]
+    pub borrowed_pct: f64,
+    #[stat(desc = "Affinity violations % of global")]
+    pub affn_violations_pct: f64,
+    #[stat(desc = "Steal %")]
+    pub steal_pct: f64,
+    #[stat(desc = "Orphaned LLC DSQ drain events")]
+    pub drain_cnt: u64,
+    #[stat(desc = "Orphaned LLC DSQ affinity rescue events")]
+    pub drain_affn_cnt: u64,
+    #[stat(desc = "Pin reject skipped %")]
+    pub pin_skip_pct: f64,
+    #[stat(desc = "Slice shrink events")]
+    pub slice_shrink: u64,
+    #[stat(desc = "Slice shrink at max")]
+    pub slice_shrink_max: u64,
+    #[stat(desc = "Slice shrink proportional")]
+    pub slice_shrink_proportional: u64,
+    #[stat(desc = "Slice shrink at min")]
+    pub slice_shrink_min: u64,
+    #[stat(desc = "Decision share % of global")]
+    pub share_of_decisions_pct: f64,
+    #[stat(desc = "Cell scheduling decisions")]
+    total_decisions: u64,
+    #[stat(desc = "CPU utilization %")]
+    pub util_pct: f64,
+    #[stat(desc = "Borrowed CPU time % of running")]
+    pub demand_borrow_pct: f64,
+    #[stat(desc = "Lent CPU time %")]
+    pub lent_pct: f64,
+    #[stat(desc = "EWMA-smoothed utilization %")]
+    pub smoothed_util_pct: f64,
+    #[stat(desc = "Per-subcell metrics")]
+    pub subcells: BTreeMap<u32, SubcellMetrics>,
+}
+
+impl CellMetrics {
+    pub fn update(&mut self, ds: &DistributionStats) {
+        self.local_q_pct = ds.local_q_pct;
+        self.cpu_q_pct = ds.cpu_q_pct;
+        self.cell_q_pct = ds.cell_q_pct;
+        self.borrowed_pct = ds.borrowed_pct;
+        self.affn_violations_pct = ds.affn_viol_pct;
+        self.steal_pct = ds.steal_pct;
+        self.pin_skip_pct = ds.pin_skip_pct;
+        self.share_of_decisions_pct = ds.share_of_decisions_pct;
+        self.total_decisions = ds.total_decisions;
+    }
+
+    pub fn update_demand(&mut self, util_pct: f64, demand_borrow_pct: f64, lent_pct: f64) {
+        self.util_pct = util_pct;
+        self.demand_borrow_pct = demand_borrow_pct;
+        self.lent_pct = lent_pct;
+    }
+}
+
+#[stat_doc]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, Stats)]
+#[stat(top)]
+pub struct Metrics {
+    #[stat(desc = "Number of cells")]
+    pub num_cells: u32,
+    #[stat(desc = "Local queue %")]
+    pub local_q_pct: f64,
+    #[stat(desc = "CPU queue %")]
+    pub cpu_q_pct: f64,
+    #[stat(desc = "Cell queue %")]
+    pub cell_q_pct: f64,
+    #[stat(desc = "Borrowed CPU %")]
+    pub borrowed_pct: f64,
+    #[stat(desc = "Affinity violations % of global")]
+    pub affn_violations_pct: f64,
+    #[stat(desc = "Steal %")]
+    pub steal_pct: f64,
+    #[stat(desc = "Orphaned LLC DSQ drain events")]
+    pub drain_cnt: u64,
+    #[stat(desc = "Orphaned LLC DSQ affinity rescue events")]
+    pub drain_affn_cnt: u64,
+    #[stat(desc = "Pin reject skipped %")]
+    pub pin_skip_pct: f64,
+    #[stat(desc = "Slice shrink events")]
+    pub slice_shrink: u64,
+    #[stat(desc = "Slice shrink at max")]
+    pub slice_shrink_max: u64,
+    #[stat(desc = "Slice shrink proportional")]
+    pub slice_shrink_proportional: u64,
+    #[stat(desc = "Slice shrink at min")]
+    pub slice_shrink_min: u64,
+    #[stat(desc = "Decision share % of global")]
+    pub share_of_decisions_pct: f64,
+    #[stat(desc = "Cell scheduling decisions")]
+    total_decisions: u64,
+    #[stat(desc = "CPU utilization %")]
+    pub util_pct: f64,
+    #[stat(desc = "Borrowed CPU time % of running")]
+    pub demand_borrow_pct: f64,
+    #[stat(desc = "Lent CPU time %")]
+    pub lent_pct: f64,
+    #[stat(desc = "Number of rebalancing events")]
+    pub rebalance_count: u64,
+    #[stat(
+        desc = "1 if the cell-0 holdout has taken a CPU already claimed by a workload cell, else 0"
+    )]
+    pub enforced_holdout: u64,
+    #[stat(desc = "Per-cell metrics")]
+    pub cells: BTreeMap<u32, CellMetrics>,
+}
+
+impl Metrics {
+    pub fn update(&mut self, ds: &DistributionStats) {
+        self.local_q_pct = ds.local_q_pct;
+        self.cpu_q_pct = ds.cpu_q_pct;
+        self.cell_q_pct = ds.cell_q_pct;
+        self.borrowed_pct = ds.borrowed_pct;
+        self.affn_violations_pct = ds.affn_viol_pct;
+        self.steal_pct = ds.steal_pct;
+        self.pin_skip_pct = ds.pin_skip_pct;
+        self.share_of_decisions_pct = ds.share_of_decisions_pct;
+        self.total_decisions = ds.total_decisions;
+    }
+
+    pub fn update_demand(&mut self, util_pct: f64, demand_borrow_pct: f64, lent_pct: f64) {
+        self.util_pct = util_pct;
+        self.demand_borrow_pct = demand_borrow_pct;
+        self.lent_pct = lent_pct;
+    }
+
+    fn delta(&self, _: &Self) -> Self {
+        Self { ..self.clone() }
+    }
+
+    fn format<W: Write>(&self, w: &mut W) -> Result<()> {
+        writeln!(w, "{}", serde_json::to_string_pretty(self)?)?;
+        Ok(())
+    }
+}
+
+pub fn server_data() -> StatsServerData<(), Metrics> {
+    let open: Box<dyn StatsOpener<(), Metrics>> = Box::new(move |(req_ch, res_ch)| {
+        req_ch.send(())?;
+        let mut prev = res_ch.recv()?;
+
+        let read: Box<dyn StatsReader<(), Metrics>> = Box::new(move |_args, (req_ch, res_ch)| {
+            req_ch.send(())?;
+            let cur = res_ch.recv()?;
+            let delta = cur.delta(&prev);
+            prev = cur;
+            delta.to_json()
+        });
+
+        Ok(read)
+    });
+
+    StatsServerData::new()
+        .add_meta(Metrics::meta())
+        .add_meta(CellMetrics::meta())
+        .add_meta(SubcellMetrics::meta())
+        .add_ops("top", StatsOps { open, close: None })
+}
+
+pub fn monitor(intv: Duration, shutdown: Arc<AtomicBool>) -> Result<()> {
+    scx_utils::monitor_stats::<Metrics>(
+        &[],
+        intv,
+        || shutdown.load(Ordering::Relaxed),
+        |metrics| metrics.format(&mut std::io::stdout()),
+    )
+}
