@@ -53,9 +53,8 @@ Two constraints on `scx_bpf_dump()`:
 - Output is truncated by `exit_dump_len` (default 32768). Put the interesting
   part first; a truncated dump hides the end.
 
-For per-event tracing, `scx_bpf_dump()` inside a hot callback is far too
-expensive. Use the per-CPU counters in `tls_stats` instead and read them
-with `./build/tls --stats build/tls.bpf.o`.
+Avoid calling `scx_bpf_dump()` inside hot scheduling callbacks (`tls_enqueue`,
+`tls_dispatch`, `tls_tick`); trigger dumps on demand or on exit/stall instead.
 
 ---
 
@@ -183,20 +182,18 @@ each step is one experiment.
 
 ## Measuring
 
-Two things to record per experiment: that the machine stayed responsive, and
-what the counters did.
+Record per experiment that the machine stayed responsive, along with any
+state dumps and exit reports:
 
 ```sh
-./build/tls --stats build/tls.bpf.o     # the tls_stats counters
 cat /sys/kernel/sched_ext/root/ops            # what is attached
 dmesg | tail -50                              # dumps and watchdog reports
 ```
 
-The counters in `enum tls_stat_id` are the ones the architecture document
-implies: draws, empty-pool draws, promotions, demotions, sanctuary entries and
-budget overruns, tier overflows, steals, idle kicks. They start at zero and
-stay there until you implement the code that increments them — a counter that
-never moves is a fact about your implementation, not a broken counter.
+The policy callbacks do not keep extra event statistics counters (`tls_stats`)
+to avoid hot-path overhead; only the live scheduler state required by the
+algorithm (per-tier `nr`, `total_tickets`, `load_factor`, and `weights[]`) is
+maintained.
 
 ---
 

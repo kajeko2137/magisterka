@@ -646,15 +646,20 @@ void BPF_STRUCT_OPS(tls_enqueue, struct task_struct *p, u64 enq_flags)
 	 * If the task is already parked, it was woken while queued: it only
 	 * needs to become dispatchable, and it keeps its tier. Re-pushing it
 	 * would violate the "one tier array at a time" invariant.
-	 *
-	 * TODO(policy): this is where the wakeup-promotion decision belongs
-	 * for a task that is already queued. The document's only promotion
-	 * mechanism is the 150 ms rotation; a latency-aware policy would
-	 * also promote on SCX_ENQ_WAKEUP here.
 	 */
 	if (task_ctx->linked) {
-		slice = tls_slice_ns();
-		scx_bpf_dsq_insert(p, SCX_DSQ_LOCAL, slice, enq_flags);
+		s32 linked_cpu = task_ctx->cpu;
+
+		if (task_ctx->tier == TIER_SANCTUARY)
+			slice = tls_sanctuary_budget();
+		else
+			slice = tls_slice_ns();
+
+		if (linked_cpu >= 0 && linked_cpu < (s32)TLS_MAX_CPUS)
+			scx_bpf_dsq_insert(p, SCX_DSQ_LOCAL_ON | (u64)(u32)linked_cpu,
+					   slice, enq_flags);
+		else
+			scx_bpf_dsq_insert(p, SCX_DSQ_LOCAL, slice, enq_flags);
 		return;
 	}
 
@@ -672,24 +677,35 @@ void BPF_STRUCT_OPS(tls_enqueue, struct task_struct *p, u64 enq_flags)
 	}
 
 	/*
-	 * TODO(policy): tier picking and sanctuary admission:
-	 *   - If task_ctx->tier == TIER_SANCTUARY (Tier -1), admit via
-	 *     tls_sanctuary_enter(cpu_ctx, p) instead of tls_tier_push().
-	 *     Tier -1 is strict priority and MUST preempt already-running
-	 *     tasks on the target CPU (e.g. dispatch with
-	 *     SCX_ENQ_PREEMPT / SCX_ENQ_HEAD and/or
-	 *     scx_bpf_kick_cpu(cpu, SCX_KICK_PREEMPT)). If the sanctuary
-	 *     slot is already occupied (-2), fall back to TIER_ANCHOR.
-	 *   - Otherwise decide the lottery tier for newly runnable / woken
-	 *     tasks: if woken from sleep (enq_flags & SCX_ENQ_WAKEUP) and
-	 *     in Tiers 2..4 (tier_id > TIER_HIGH), promote one tier up
-	 *     (tier_id - 1, capped at TIER_HIGH / Tier 1) without
-	 *     preempting the running task, then push into cpu_ctx->tiers[].
+	 * Tier -1 (Sanctuary) bypasses the lottery and preempts the target CPU
+	 * with a strict 1 ms budget; if its single slot is already busy, defer
+	 * the task into Tier 0 (Anchor).
 	 */
-	if (tls_tier_valid(task_ctx->tier))
-		tier_id = task_ctx->tier;
-	else
+	if (task_ctx->tier == TIER_SANCTUARY) {
+		if (tls_sanctuary_enter(cpu_ctx, p) == 0) {
+			slice = tls_sanctuary_budget();
+			scx_bpf_dsq_insert(p, SCX_DSQ_LOCAL_ON | (u64)(u32)cpu,
+					   slice,
+					   enq_flags | SCX_ENQ_PREEMPT | SCX_ENQ_HEAD);
+			scx_bpf_kick_cpu(cpu, SCX_KICK_PREEMPT);
+			return;
+		}
 		tier_id = TIER_ANCHOR;
+	} else if (tls_tier_valid(task_ctx->tier)) {
+		tier_id = task_ctx->tier;
+	} else {
+		tier_id = TIER_ANCHOR;
+		task_ctx->tier = tier_id;
+	}
+
+	/*
+	 * Wakeup promotion: tasks in Tiers 2..4 waking from sleep step up one
+	 * tier (capped at Tier 1 / TIER_HIGH) without preempting the CPU.
+	 */
+	if ((enq_flags & SCX_ENQ_WAKEUP) && tier_id > TIER_HIGH) {
+		tier_id--;
+	    task_ctx->tier = tier_id;
+    }
 
 	if (tls_tier_push(cpu_ctx, tier_id, p)) {
 		/*

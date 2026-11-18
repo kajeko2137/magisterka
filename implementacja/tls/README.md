@@ -14,7 +14,7 @@ src/include/tls_core.bpf.h   maps, storage, accessors        (the plumbing)
 src/include/tls_bpf_impl.h   tier/lottery mechanism          (no policy)
 src/bpf/main.bpf.c              one translation unit + the ops table
 src/bpf/tls_stubs.bpf.c      >>> THE 26 STUBS YOU IMPLEMENT <<<
-userspace/tls.c              libbpf loader, stats, exit report
+userspace/tls.c              libbpf loader, exit report
 scripts/                        BTF reading, vmlinux.h, ABI checking
 ```
 
@@ -173,7 +173,6 @@ Tunables are command-line options and match `struct tls_tunables`:
 ./build/tls --help
 ./build/tls --slice-ms 5 --rotate-ms 100 build/tls.bpf.o
 ./build/tls --verify build/tls.bpf.o    # verifier only, never attaches
-./build/tls --stats build/tls.bpf.o
 ./build/tls --help-abi                     # the callback contract, in full
 ```
 
@@ -194,7 +193,7 @@ the likely cause for each.
 - The ticket accounting *plumbing*: `weights[]` per CPU, `total_tickets`,
   per-tier counts, and a recount that recomputes totals from the weights
 - The `Winning_Ticket` arithmetic helper and a PRNG-scaled draw helper
-- Per-task and per-CPU storage maps, per-CPU statistics counters
+- Per-task and per-CPU storage maps
 - A working `enqueue` default (push to tier, fall back to Anchor then the local
   DSQ) so the scheduler is functional before you write any policy
 - A complete, working `dump` / `dump_cpu` / `dump_task` — the fastest way to

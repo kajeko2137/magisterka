@@ -10,7 +10,7 @@ Instead of maintaining a single monolithic runqueue, TLSx64 distributes active p
 
 | Tier | Label | Tickets / Task | Purpose & Characteristics |
 | :--- | :--- | :--- | :--- |
-| **Tier -1** | **The Sanctuary** | N/A | Strict-priority lane for bottom-half hardware I/O routines. Completely bypasses the lottery, constrained by a strict hardware cycle budget (`RDTSC`) to prevent interrupt livelocks. |
+| **Tier -1** | **The Sanctuary** | N/A | Strict-priority lane for bottom-half hardware I/O routines. Completely bypasses the lottery, constrained by a strict 1 ms execution budget (`bpf_ktime_get_ns()`) to prevent interrupt livelocks. |
 | **Tier 0** | **The Anchor** | 30 | Fixed landing zone for newly spawned tasks and deferred I/O packages. Structurally excluded from starvation rotation. |
 | **Tier 1** | **High Priority** | 20 | Fast, interactive tasks requiring minimal latency (e.g., UI updates, user input handlers). |
 | **Tier 2** | **Medium Priority** | 12 | Standard interactive applications and intermediate computational tasks. |

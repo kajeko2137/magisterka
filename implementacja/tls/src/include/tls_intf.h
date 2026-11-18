@@ -54,7 +54,7 @@ typedef signed long s64;
  * Tier ids are the architecture's own numbering and are signed:
  *
  *   -1  Sanctuary    strict-priority I/O bottom-half lane; not a lottery
- *                    participant, bounded by an RDTSC cycle budget.
+ *                    participant, bounded by a 1 ms execution budget.
  *    0  Anchor       30 tickets. Landing zone for new tasks and deferred
  *                    I/O. Structurally excluded from starvation rotation.
  *    1  High         20 tickets. Interactive / low-latency.
@@ -145,11 +145,11 @@ typedef signed long s64;
 #define TLS_BALANCE_NS		(100ull * 1000 * 1000)
 
 /*
- * Sanctuary cycle budget. A Tier -1 task that burns more than this many
- * RDTSC cycles is demoted so that a runaway bottom-half handler cannot
- * livelock the core.
+ * Sanctuary time budget (nanoseconds). A Tier -1 task that burns more than
+ * this much time (1 ms default) is demoted so that a runaway bottom-half
+ * handler cannot livelock the core.
  */
-#define TLS_SANCTUARY_BUDGET_CYCLES	(200ull * 1000)
+#define TLS_SANCTUARY_BUDGET_CYCLES	(1000ull * 1000)
 
 /*
  * An idle CPU that has been kicked more than this many times without the
@@ -353,7 +353,7 @@ struct tls_tunables {
 	u64 rotate_ns;
 	/* Balancing period in nanoseconds. 0 => TLS_BALANCE_NS. */
 	u64 balance_ns;
-	/* Sanctuary RDTSC budget in cycles. 0 => TLS_SANCTUARY_BUDGET. */
+	/* Sanctuary budget in nanoseconds (1 ms default). 0 => TLS_SANCTUARY_BUDGET_CYCLES. */
 	u64 sanctuary_budget_cycles;
 
 	/* Consecutive losses before a task is promoted a tier. 0 disables

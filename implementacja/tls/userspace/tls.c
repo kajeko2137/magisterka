@@ -124,7 +124,7 @@
 #define TLS_SLICE_MS_DFL		10ull
 #define TLS_ROTATE_MS_DFL		150ull
 #define TLS_BALANCE_MS_DFL		100ull
-#define TLS_SANCTUARY_BUDGET_DFL	200000ull	/* nanoseconds */
+#define TLS_SANCTUARY_BUDGET_DFL	1000000ull	/* nanoseconds (1 ms) */
 #define TLS_BALANCE_NUM_DFL		2u
 #define TLS_BALANCE_DEN_DFL		1u
 
@@ -803,7 +803,7 @@ static void usage(const char *argv0)
 "  --slice-ms N          reschedule quantum              [10]\n"
 "  --rotate-ms N         starvation rotation period      [150]\n"
 "  --balance-ms N        load-balance period             [100]\n"
-"  --sanctuary-ns N      Tier -1 cycle budget            [200000]\n"
+"  --sanctuary-ns N      Tier -1 time budget (ns)        [1000000]\n"
 "  --promote-after N     lottery losses before promotion [0 = disabled]\n"
 "  --balance-ratio A:B   steal threshold                 [2:1]\n"
 "  --rotate-reverse      rotate starvation the other way\n"
