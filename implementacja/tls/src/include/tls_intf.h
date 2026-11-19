@@ -152,6 +152,13 @@ typedef signed long s64;
 #define TLS_SANCTUARY_BUDGET_CYCLES	(1000ull * 1000)
 
 /*
+ * Minimum sleep duration (nanoseconds) required for SCX_ENQ_WAKEUP to qualify
+ * for wakeup promotion and to reset carried-over slice usage. Prevents brief
+ * futex/pipe/page-fault micro-sleeps from crowding Tier 1.
+ */
+#define TLS_WAKEUP_MIN_SLEEP_NS		(2ull * 1000 * 1000)
+
+/*
  * An idle CPU that has been kicked more than this many times without the
  * target starting to run is considered stuck; the scheduler reports it
  * rather than spinning.
@@ -219,6 +226,10 @@ struct tls_task_ctx {
 	bool linked;
 	/* Explicit padding to 16 bytes for stable BTF layout. */
 	u8 __pad[3];
+	/* Timestamp when the task blocked (0 if stopped while still runnable). */
+	u64 last_sleep_ns;
+	/* Cumulative runtime toward the current quantum across short sleeps. */
+	u64 slice_used_ns;
 };
 
 /* ------------------------------------------------------------------ */

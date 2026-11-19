@@ -597,7 +597,9 @@ void BPF_STRUCT_OPS(tls_disable, struct task_struct *p)
  *                 a) Get or create the task context; if the task is not yet
  *                    linked, choose its tier. The document's rule for a
  *                    newly runnable task is Tier 0 (anchor). Tasks woken by
- *                    SCX_ENQ_WAKEUP in Tiers 2..4 are promoted one tier up
+ *                    SCX_ENQ_WAKEUP after sleeping at least
+ *                    TLS_WAKEUP_MIN_SLEEP_NS reset their carried-over slice
+ *                    usage and, if in Tiers 2..4, promote one tier up
  *                    (tier - 1, capped at TIER_HIGH / Tier 1) without
  *                    preempting the running task.
  *                 b) Pick the target CPU. If SCX_ENQ_CPU_SELECTED is set, use
@@ -627,6 +629,7 @@ void BPF_STRUCT_OPS(tls_enqueue, struct task_struct *p, u64 enq_flags)
 	struct tls_cpu_ctx *cpu_ctx;
 	struct tls_task_ctx *task_ctx;
 	struct tls_tier *tier;
+	bool qualified_wakeup = false;
 	s32 cpu, tier_id;
 	u64 slice;
 
@@ -677,6 +680,27 @@ void BPF_STRUCT_OPS(tls_enqueue, struct task_struct *p, u64 enq_flags)
 	}
 
 	/*
+	 * Tier 1 crowding guard (minimum sleep threshold): only a genuine sleep
+	 * of at least TLS_WAKEUP_MIN_SLEEP_NS resets carried-over slice usage
+	 * and qualifies for wakeup promotion. Brief futex/pipe/page-fault
+	 * micro-sleeps neither clear slice_used_ns nor promote the task.
+	 */
+	if (enq_flags & SCX_ENQ_WAKEUP) {
+		u64 now = bpf_ktime_get_ns();
+		u64 slept_ns = 0;
+
+		if (task_ctx->last_sleep_ns != 0 && now > task_ctx->last_sleep_ns)
+			slept_ns = now - task_ctx->last_sleep_ns;
+
+		if (slept_ns >= TLS_WAKEUP_MIN_SLEEP_NS) {
+			task_ctx->slice_used_ns = 0;
+			qualified_wakeup = true;
+		}
+
+		task_ctx->last_sleep_ns = 0;
+	}
+
+	/*
 	 * Tier -1 (Sanctuary) bypasses the lottery and preempts the target CPU
 	 * with a strict 1 ms budget; if its single slot is already busy, defer
 	 * the task into Tier 0 (Anchor).
@@ -695,17 +719,17 @@ void BPF_STRUCT_OPS(tls_enqueue, struct task_struct *p, u64 enq_flags)
 		tier_id = task_ctx->tier;
 	} else {
 		tier_id = TIER_ANCHOR;
-		task_ctx->tier = tier_id;
 	}
 
 	/*
-	 * Wakeup promotion: tasks in Tiers 2..4 waking from sleep step up one
-	 * tier (capped at Tier 1 / TIER_HIGH) without preempting the CPU.
+	 * Wakeup promotion: tasks in Tiers 2..4 waking from a qualified sleep
+	 * step up one tier (capped at Tier 1 / TIER_HIGH) without preempting
+	 * the CPU.
 	 */
-	if ((enq_flags & SCX_ENQ_WAKEUP) && tier_id > TIER_HIGH) {
+	if (qualified_wakeup && tier_id > TIER_HIGH)
 		tier_id--;
-	    task_ctx->tier = tier_id;
-    }
+
+	task_ctx->tier = tier_id;
 
 	if (tls_tier_push(cpu_ctx, tier_id, p)) {
 		/*
@@ -932,31 +956,80 @@ void BPF_STRUCT_OPS(tls_tick, struct task_struct *p)
  *
  * WHEN CALLED   When the running task on this CPU is being descheduled, just
  *               before it stops. Symmetric with tls_running().
- * ARGS          p:       the task stopping. Still running.
- *               running: true if it is stopping because it is being
- *                        preempted or is exiting, false if it is yielding
- *                        to a higher-priority class.
+ * ARGS          p:        the task stopping. Still running.
+ *               runnable: true if it is still runnable (slice expired,
+ *                         preempted, or yielding), false if it is blocking /
+ *                         going to sleep or exiting.
  * RETURN        void
- * DEFAULT       Unlinks the task so that the tier arrays never hold a task
- *               that is on a CPU, and classifies its departure for
- *               accounting. This is required for correctness of the
- *               invariant that a linked task is not running.
+ * DEFAULT       Unlinks the task, accumulates runtime toward its current
+ *               quantum (demoting on exhaustion), and stamps last_sleep_ns
+ *               when blocking so tls_enqueue() can enforce the minimum sleep
+ *               threshold for wakeup promotion.
  * MUST          The task must not remain linked while it is running;
  *               otherwise a remote steal could take a task that is executing
  *               on another CPU.
- * IMPLEMENT     TODO - the departure classification. The document's rule is
- *               that a task which "exhausts its assigned time quantum" is
- *               demoted and a task that blocks keeps its tier. The signal
- *               available here is how long the task ran, from
- *               cpu_ctx->last_slice_start_ns to now: at or above the slice
- *               means the quantum expired. Let tls_enqueue() apply the
- *               demotion, or demote here before returning. The unlinking
- *               below is done.
+ * IMPLEMENT     Complete for quota accounting, demotion, and Tier 1 crowding
+ *               guards.
  */
-void BPF_STRUCT_OPS(tls_stopping, struct task_struct *p, bool running)
+void BPF_STRUCT_OPS(tls_stopping, struct task_struct *p, bool runnable)
 {
+	struct tls_task_ctx *task_ctx;
+	struct tls_cpu_ctx *cpu_ctx;
+	u64 now, delta;
+	s32 cpu;
+
 	tls_unlink(p);
-	(void)running;
+
+	task_ctx = tls_task_ctx(p);
+	if (!task_ctx)
+		return;
+
+	/*
+	 * Use p's CPU context rather than bpf_get_smp_processor_id(), because
+	 * ops.stopping() can occasionally run from another CPU during
+	 * migration while holding p's rq lock.
+	 */
+	cpu = scx_bpf_task_cpu(p);
+	cpu_ctx = tls_cpu_ctx_of(cpu);
+	if (!cpu_ctx)
+		return;
+
+	now = bpf_ktime_get_ns();
+
+	/*
+	 * Tier 1 crowding guard (cumulative runtime carry-over): accumulate
+	 * elapsed runtime into task_ctx->slice_used_ns across short sleeps so
+	 * a task that blocks briefly before 10 ms cannot evade demotion.
+	 */
+	delta = 0;
+	if (cpu_ctx->last_slice_start_ns != 0 && now > cpu_ctx->last_slice_start_ns)
+		delta = now - cpu_ctx->last_slice_start_ns;
+
+	cpu_ctx->last_slice_start_ns = 0;
+	task_ctx->slice_used_ns += delta;
+
+	if (task_ctx->tier == TIER_SANCTUARY) {
+		if (task_ctx->slice_used_ns >= tls_sanctuary_budget()) {
+			task_ctx->tier = TIER_ANCHOR;
+			task_ctx->slice_used_ns = 0;
+		}
+	} else {
+		if (task_ctx->slice_used_ns >= tls_slice_ns()) {
+			if (task_ctx->tier < TIER_BACKGROUND)
+				task_ctx->tier++;
+			task_ctx->slice_used_ns = 0;
+		}
+	}
+
+	/*
+	 * Tier 1 crowding guard (sleep start stamp): only stamp last_sleep_ns
+	 * when the task is actually blocking so preemption wait time never
+	 * counts as sleep time.
+	 */
+	if (!runnable)
+		task_ctx->last_sleep_ns = now;
+	else
+		task_ctx->last_sleep_ns = 0;
 }
 
 /*
@@ -1511,9 +1584,10 @@ void BPF_STRUCT_OPS(tls_dump_task, struct scx_dump_ctx *dctx, struct task_struct
 		return;
 	}
 
-	scx_bpf_dump("task %d: tier=%d slot=%d cpu=%d linked=%d\n",
+	scx_bpf_dump("task %d: tier=%d slot=%d cpu=%d linked=%d slice_used=%llu\n",
 		     p->pid, task_ctx->tier, task_ctx->slot, task_ctx->cpu,
-		     (int)task_ctx->linked);
+		     (int)task_ctx->linked,
+		     (unsigned long long)task_ctx->slice_used_ns);
 	(void)dctx;
 }
 /*
