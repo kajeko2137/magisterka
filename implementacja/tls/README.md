@@ -142,6 +142,8 @@ scp target:/sys/kernel/btf/vmlinux ./target.btf
 make BTF=./target.btf
 ```
 
+---
+
 ### Why the ABI check matters
 
 The kernel matches struct_ops members by offset, not by name. If the object was
@@ -206,7 +208,7 @@ the likely cause for each.
 - Boundary walking and index division across tiers
 - The starvation rotation permutation in `tls_tick`
 - Batch stealing and victim selection
-- Load-factor placement in `tls_select_cpu`
+- Load-factor placement on wakeup in `tls_wakeup_select_cpu`
 - The xorshift step and its seeding policy
 
 `src/include/tls_bpf_impl.h` carries an explicit

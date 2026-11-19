@@ -164,7 +164,7 @@ From the stub file header, repeated here because it is the plan:
 | 4 | `tls_dispatch` | hand a task to the local DSQ |
 | | | **steps 1–4 = a functional scheduler** |
 | 5 | `tls_tick` | the 10 ms quantum and demotion |
-| 6 | `tls_select_cpu` | passive load placement |
+| 6 | `tls_wakeup_select_cpu` | passive load placement on wakeup |
 | 7 | `tls_running` | slice start accounting |
 | 8 | the lottery draw | O(1) winner selection |
 | 9 | the starvation rotation | the 150 ms weight permutation |

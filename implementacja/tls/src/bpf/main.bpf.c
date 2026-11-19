@@ -94,36 +94,36 @@ UEI_DEFINE(tls_uei);
  * documented per callback in tls_stubs.bpf.c so that you can always tell
  * "not called" from "called and did nothing".
  *
- *   Member          Implemented in            Optional?
- *   --------------  ------------------------  -----------------------------
- *   select_cpu      tls_select_cpu()       optional, but leave it in
- *   enqueue         tls_enqueue()          REQUIRED
- *   dispatch        tls_dispatch()         optional; see the note below
- *   tick            tls_tick()             optional; needed for the 10 ms
- *                                             quantum and 150 ms rotation
- *   runnable        tls_runnable()         optional
- *   running         tls_running()          optional; needed for slice
- *                                             accounting
- *   stopping        tls_stopping()         optional; needed so a running
- *                                             task is not left linked
- *   quiescent       tls_quiescent()        optional
- *   yield           tls_yield()            optional
- *   set_weight      tls_set_weight()       optional
- *   set_cpumask     tls_set_cpumask()      optional
- *   update_idle     tls_update_idle()      optional
- *   init_task       tls_init_task()        required in practice
- *   exit_task       tls_exit_task()        optional
- *   enable          tls_enable()           optional
- *   disable         tls_disable()          optional
- *   dump            tls_dump()             optional, useful
- *   dump_cpu        tls_dump_cpu()         optional, useful
- *   dump_task       tls_dump_task()        optional, useful
- *   cpu_online      tls_cpu_online()       optional
- *   cpu_offline     tls_cpu_offline()      optional
- *   cpu_acquire     tls_cpu_acquire()      optional
- *   cpu_release     tls_cpu_release()      optional
- *   init            tls_init()             optional
- *   exit            tls_exit()             optional
+ *   Member          Implemented in             Optional?
+ *   --------------  -------------------------  -----------------------------
+ *   select_cpu      tls_wakeup_select_cpu()    optional, but leave it in
+ *   enqueue         tls_enqueue()              REQUIRED
+ *   dispatch        tls_dispatch()             optional; see the note below
+ *   tick            tls_tick()                 optional; needed for the 10 ms
+ *                                                 quantum and 150 ms rotation
+ *   runnable        tls_runnable()             optional
+ *   running         tls_running()              optional; needed for slice
+ *                                                 accounting
+ *   stopping        tls_stopping()             optional; needed so a running
+ *                                                 task is not left linked
+ *   quiescent       tls_quiescent()            optional
+ *   yield           tls_yield()                optional
+ *   set_weight      tls_set_weight()           optional
+ *   set_cpumask     tls_set_cpumask()          optional
+ *   update_idle     tls_update_idle()          optional
+ *   init_task       tls_init_task()            required in practice
+ *   exit_task       tls_exit_task()            optional
+ *   enable          tls_enable()               optional
+ *   disable         tls_disable()              optional
+ *   dump            tls_dump()                 optional, useful
+ *   dump_cpu        tls_dump_cpu()             optional, useful
+ *   dump_task       tls_dump_task()            optional, useful
+ *   cpu_online      tls_cpu_online()           optional
+ *   cpu_offline     tls_cpu_offline()          optional
+ *   cpu_acquire     tls_cpu_acquire()          optional
+ *   cpu_release     tls_cpu_release()          optional
+ *   init            tls_init()                 optional
+ *   exit            tls_exit()                 optional
  *
  * Deliberately NOT registered:
  *
@@ -190,7 +190,7 @@ UEI_DEFINE(tls_uei);
  * stays NULL because it is not named here.
  */
 SCX_OPS_DEFINE(tls_ops,
-	.select_cpu		= (void *)tls_select_cpu,
+	.select_cpu		= (void *)tls_wakeup_select_cpu,
 	.enqueue		= (void *)tls_enqueue,
 	.dispatch		= (void *)tls_dispatch,
 	.tick			= (void *)tls_tick,

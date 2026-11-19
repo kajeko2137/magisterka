@@ -89,19 +89,19 @@
  * Do not write the lottery first. A broken lifecycle looks exactly like a
  * broken lottery: a hang. Get the lifecycle right, then the policy.
  *
- *   Step 1  tls_init()          per-CPU structures, weight table
- *   Step 2  tls_init_task()     per-task state, initial tier
- *   Step 3  tls_enqueue()       park the task in a tier
- *   Step 4  tls_dispatch()      hand a task to the local DSQ
+ *   Step 1  tls_init()               per-CPU structures, weight table
+ *   Step 2  tls_init_task()          per-task state, initial tier
+ *   Step 3  tls_enqueue()            park the task in a tier
+ *   Step 4  tls_dispatch()           hand a task to the local DSQ
  *
  *           After step 4 the object attaches and tasks run. This is what
  *           "a functional scheduler" means for this workspace. Verify with
  *           `make verify`, then attach it and confirm the machine stays
  *           responsive before touching anything else.
  *
- *   Step 5  tls_tick()          the 10 ms quantum and demotion
- *   Step 6  tls_select_cpu()    passive load placement
- *   Step 7  tls_running()       slice start accounting
+ *   Step 5  tls_tick()               the 10 ms quantum and demotion
+ *   Step 6  tls_wakeup_select_cpu()  passive load placement on wakeup
+ *   Step 7  tls_running()            slice start accounting
  *   Step 8  the lottery draw       O(1) winner selection
  *   Step 9  the starvation rotation  the 150 ms weight permutation
  *   Step 10 the load balancer      bottom-up batch stealing
@@ -571,8 +571,8 @@ void BPF_STRUCT_OPS(tls_disable, struct task_struct *p)
  *                                       latency-sensitive case
  *                 SCX_ENQ_PREEMPT       it is expected to preempt currently
  *                                       running work
- *                 SCX_ENQ_CPU_SELECTED  tls_select_cpu() already chose a
- *                                       CPU for it, so do not re-decide
+ *                 SCX_ENQ_CPU_SELECTED  tls_wakeup_select_cpu() already chose
+ *                                       a CPU for it, so do not re-decide
  *                 SCX_ENQ_LAST          it is the last task in this batch
  *                 SCX_ENQ_REENQ         the kernel is re-enqueueing it
  *                 SCX_ENQ_HEAD          insert at the head, not the tail
@@ -1064,61 +1064,28 @@ void BPF_STRUCT_OPS(tls_quiescent, struct task_struct *p, u64 flags)
 }
 
 /* ================================================================== */
-/* STEP 6 - CPU selection and passive placement                        */
+/* STEP 6 - CPU selection on wakeup and passive placement              */
 /* ================================================================== */
 
 /*
- * tls_select_cpu - choose the CPU a waking task should run on.
+ * tls_wakeup_select_cpu - pick the target CPU on wakeup (ops.select_cpu).
  *
- * WHEN CALLED   On wakeup, before the task is enqueued, on the CPU the
- *               wakeup originated from. May also be called on migration.
+ * WHEN CALLED   On wakeups (and fork/exec CPU selection) when the task can
+ *               migrate (nr_cpus_allowed > 1), before its runqueue lock is
+ *               taken. Not called on slice-expired/preemption re-enqueues or
+ *               single-CPU pinned tasks.
  * ARGS          p:          the waking task.
- *               prev_cpu:   the CPU it last ran on. Strongly prefer this
- *                           unless you have a reason not to: it is where the
- *                           task's working set still sits in L1/L2.
- *               wake_flags: WF_* flags. WF_SYNC means the waker is going to
- *                           sleep waiting for this task, which makes
- *                           locality much more valuable.
- * RETURN        The CPU id to run on, or SCX_CPU_PICK_* sentinels:
- *
- *                 SCX_CPU_PICK_ANY   let the kernel choose
- *                 SCX_CPU_PICK_IDLE  pick an idle CPU (a hint, not binding)
- *
- *               Returning an offline or disallowed CPU makes the kernel fall
- *               back to prev_cpu; it is not fatal, but it wastes the call.
- * DEFAULT       Delegates to scx_bpf_select_cpu_dfl(), which implements the
- *               kernel's own idle-CPU search and is a good baseline to
- *               measure against. Sets *is_idle so the caller can use
- *               SCX_ENQ_CPU_SELECTED.
- * MUST          The returned CPU must be in the task's cpumask. The default
- *               path guarantees that; a hand-written placement must check
- *               it, or the task will be enqueued on a CPU it cannot use and
- *               will sit there until the kernel notices.
- * IMPLEMENT     TODO - the document's "Passive Load Placement (Initial
- *               Drop)": route a new task locklessly to the core with the
- *               lowest atomic load factor, where the load factor is
- *               calculated from active tasks in Tier -1, Tier 3 and Tier 4.
- *               The definition is already implemented for you as
- *               tls_update_load_factor() in tls_bpf_impl.h, and every
- *               CPU's value is readable through tls_cpu_ctx_of(cpu)
- *               without a lock.
- *
- *               Sketch of the intended decision, for you to weigh against
- *               the document's text:
- *
- *                 - if prev_cpu is idle or has a low load factor, keep the
- *                   task there: cache locality beats a marginally lower
- *                   remote load, and the document itself says Tiers 0 and 1
- *                   stay pinned for cache reasons;
- *                 - otherwise scan for the CPU with the minimum load factor
- *                   and return it, but only if it is meaningfully lower,
- *                   or every wakeup will bounce tasks around the machine;
- *                 - cap the scan: nr_cpus can be large and this path is hot.
- *
- *               Note that this hook only sees the initial drop. Ongoing
- *               rebalancing is step 10.
+ *               prev_cpu:   the CPU it last ran on (keeps L1/L2 locality).
+ *               wake_flags: WF_* wakeup flags (e.g. WF_SYNC).
+ * RETURN        Target CPU id (must be in p->cpus_ptr). The kernel migrates
+ *               p there and sets SCX_ENQ_CPU_SELECTED for tls_enqueue().
+ * DEFAULT       Delegates to scx_bpf_select_cpu_dfl() to prefer an idle CPU
+ *               (or prev_cpu) and kicks it if idle.
+ * IMPLEMENT     TODO(Step 6) - replace or combine with passive load_factor
+ *               placement (tls_pick_lowest_load_cpu()) while preserving
+ *               idle-CPU kicks and p->cpus_ptr affinity checks.
  */
-s32 BPF_STRUCT_OPS(tls_select_cpu, struct task_struct *p, s32 prev_cpu, u64 wake_flags)
+s32 BPF_STRUCT_OPS(tls_wakeup_select_cpu, struct task_struct *p, s32 prev_cpu, u64 wake_flags)
 {
 	bool is_idle = false;
 	s32 cpu;
@@ -1229,7 +1196,7 @@ void BPF_STRUCT_OPS(tls_runnable, struct task_struct *p, u64 enq_flags)
  *   classification  see the TODO in tls_enqueue()
  *   demotion        see mechanism A in tls_tick()
  *   rotation        see mechanism B in tls_tick()
- *   placement       see the TODO in tls_select_cpu()
+ *   placement       see the TODO in tls_wakeup_select_cpu()
  *   stealing        step 10, below
  *
  * Provided so that the arithmetic has a home and so the skeleton shows where
@@ -1419,7 +1386,7 @@ void BPF_STRUCT_OPS(tls_set_weight, struct task_struct *p, u32 weight)
  *               has not dispatched, but a task you moved yourself must be
  *               migrated by you.
  * IMPLEMENT     TODO - the correctness argument for your placement code. If
- *               your tls_select_cpu() and stealing paths only ever choose
+ *               your tls_wakeup_select_cpu() and stealing paths only ever choose
  *               CPUs from the task's mask, and tls_enqueue() uses
  *               scx_bpf_task_cpu() when SCX_ENQ_CPU_SELECTED is set, then no
  *               action is needed here and this function can stay empty. Say
