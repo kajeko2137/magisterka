@@ -416,4 +416,4 @@ help:
 	@echo "  make VMLINUX_H=/path/to/vmlinux.h"
 	@echo
 	@echo "Full commentary is in the header of this Makefile."
-	@echo "The scheduler contract you implement is in src/bpf/tls_stubs.bpf.c."
+	@echo "The scheduler contract you implement is in src/bpf/tls_core.bpf.c."

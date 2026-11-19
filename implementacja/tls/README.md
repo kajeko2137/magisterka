@@ -9,24 +9,24 @@ provide a safe functional default or stop at a clearly marked `TODO`. Your job
 is to fill in the policy.
 
 ```
-src/include/tls_intf.h       types, tier geometry, tunables  (the contract)
-src/include/tls_core.bpf.h   maps, storage, accessors        (the plumbing)
-src/include/tls_bpf_impl.h   tier/lottery mechanism          (no policy)
-src/bpf/main.bpf.c              one translation unit + the ops table
-src/bpf/tls_stubs.bpf.c      >>> THE 26 STUBS YOU IMPLEMENT <<<
-userspace/tls.c              libbpf loader, exit report
-scripts/                        BTF reading, vmlinux.h, ABI checking
+src/include/tls_intf.h             types, tier geometry, tunables  (the contract)
+src/include/tls_structures.bpf.h   maps, storage, accessors        (the plumbing)
+src/include/tls_bpf_impl.h         tier/lottery mechanism          (no policy)
+src/bpf/main.bpf.c                 one translation unit + the ops table
+src/bpf/tls_core.bpf.c             >>> THE 26 CALLBACKS YOU IMPLEMENT <<<
+userspace/tls.c                    libbpf loader, exit report
+scripts/                           BTF reading, vmlinux.h, ABI checking
 ```
 
 ---
 
 ## The one thing to read first
 
-`src/bpf/tls_stubs.bpf.c`. It opens with an inventory table of all 26
+`src/bpf/tls_core.bpf.c`. It opens with an inventory table of all 26
 callbacks and a numbered implementation order. Work through it top to bottom.
 Steps 1–4 of that order produce a scheduler that boots and runs.
 
-Each stub states:
+Each callback states:
 
 | | |
 |---|---|

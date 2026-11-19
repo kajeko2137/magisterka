@@ -4,7 +4,7 @@ A practical guide to the edit → build → verify → attach loop, and to not
 hanging your machine while you are in it.
 
 The full callback contract lives at the top of
-[`src/bpf/tls_stubs.bpf.c`](src/bpf/tls_stubs.bpf.c). This file is the
+[`src/bpf/tls_core.bpf.c`](src/bpf/tls_core.bpf.c). This file is the
 workflow; that file is the specification.
 
 ---
@@ -128,7 +128,7 @@ useful part is the verifier's, which looks like:
 ```
 0: R1=ctx() R10=fp0
 ...
-; src/bpf/tls_stubs.bpf.c:812
+; src/bpf/tls_core.bpf.c:812
 19: (85) call bpf_ktime_get_ns#5
 R0 invalid mem access 'scalar'
 ```
@@ -154,7 +154,7 @@ have.
 
 ## The implementation order, and why it is that order
 
-From the stub file header, repeated here because it is the plan:
+From the core file header, repeated here because it is the plan:
 
 | Step | Function | What it unlocks |
 |---|---|---|
@@ -208,9 +208,9 @@ The structure to preserve:
 - `tls_intf.h` — *what exists*: types, geometry, tunables. No logic.
 - `tls_bpf_impl.h` — *how the data structures work*: push, remove, link,
   recount. No decisions.
-- `tls_stubs.bpf.c` — *what the scheduler decides*. All your policy.
+- `tls_core.bpf.c` — *what the scheduler decides*. All your policy.
 
-If you find yourself adding a decision to `tls_bpf_impl.h`, it belongs in a
-stub instead. Keeping that line clean is what makes the tiers testable and the
-thesis defensible: the mechanism is fixed, and the experiments vary only the
-policy.
+If you find yourself adding a decision to `tls_bpf_impl.h`, it belongs in
+`tls_core.bpf.c` instead. Keeping that line clean is what makes the tiers
+testable and the thesis defensible: the mechanism is fixed, and the experiments
+vary only the policy.

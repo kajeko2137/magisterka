@@ -3,7 +3,7 @@
  * TLS - scheduling policy helpers.
  *
  * Included by src/bpf/main.bpf.c after tls_bpf_impl.h and before
- * tls_stubs.bpf.c so all policy helpers share the single BPF translation
+ * tls_core.bpf.c so all policy helpers share the single BPF translation
  * unit and can be inlined directly into the sched_ext callbacks.
  */
 

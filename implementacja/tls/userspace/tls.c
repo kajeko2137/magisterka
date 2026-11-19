@@ -14,7 +14,7 @@
  *      command line to the .rodata map, before the scheduler attaches.
  *   2. Loads the verifier-checked programs and attaches the struct_ops
  *      object, which is what makes the kernel start calling the callbacks in
- *      src/bpf/tls_stubs.bpf.c.
+ *      src/bpf/tls_core.bpf.c.
  *   3. Keeps the scheduler alive until you stop it, and detaches cleanly on
  *      Ctrl-C or SIGTERM so the machine always gets its default scheduler
  *      back.
@@ -280,7 +280,7 @@ static int libbpf_log(enum libbpf_print_level level, const char *fmt,
 /*
  * A concise restatement of the callback contract, so that you can read it
  * without leaving the terminal. The authoritative version, with the
- * MUST-not-break invariants, is in src/bpf/tls_stubs.bpf.c.
+ * MUST-not-break invariants, is in src/bpf/tls_core.bpf.c.
  */
 static void print_abi_summary(void)
 {
@@ -324,7 +324,7 @@ static void print_abi_summary(void)
 
 	printf("TLS kernel-facing callbacks\n");
 	printf("Registered in src/bpf/main.bpf.c, implemented in "
-	       "src/bpf/tls_stubs.bpf.c.\n\n");
+	       "src/bpf/tls_core.bpf.c.\n\n");
 	printf("  %-14s %-40s %s\n", "member", "signature", "requirement");
 	printf("  %-14s %-40s %s\n", "------", "---------", "-----------");
 	for (i = 0; i < sizeof(table) / sizeof(table[0]); i++)
@@ -335,7 +335,7 @@ static void print_abi_summary(void)
 	       "explicitly),\n");
 	printf("cgroup_* (not part of the design).\n\n");
 	printf("Implementation order, and the full contract per callback:\n");
-	printf("  src/bpf/tls_stubs.bpf.c\n");
+	printf("  src/bpf/tls_core.bpf.c\n");
 }
 
 /* ------------------------------------------------------------------ */
@@ -541,7 +541,7 @@ static int apply_tunables(struct bpf_object *obj, const struct tls_tunables *t)
 			"  The BPF side declares the tunables as a const volatile\n"
 			"  struct in .rodata; if that declaration was removed, or the\n"
 			"  section renamed, this lookup fails. See\n"
-			"  src/include/tls_core.bpf.h.\n");
+			"  src/include/tls_structures.bpf.h.\n");
 		return -ENOENT;
 	}
 
@@ -683,7 +683,7 @@ static int print_stats(struct bpf_object *obj)
 		       "been attached yet,\n");
 		printf("or no scheduling decision has been made. Note that the "
 		       "stub implementation\n");
-		printf("in src/bpf/tls_stubs.bpf.c never increments the "
+		printf("in src/bpf/tls_core.bpf.c never increments the "
 		       "lottery counters: they\n");
 		printf("become meaningful once you implement the draw.\n");
 	}
@@ -703,7 +703,7 @@ static const char *exit_kind_name(int32_t kind)
 	case TLS_EXIT_UNREG_BPF:	return "unregistered by the BPF program";
 	case TLS_EXIT_UNREG_KERN:	return "unregistered by the kernel";
 	case TLS_EXIT_SYSRQ:		return "sysrq override";
-	case TLS_EXIT_PARENT:	return "parent exited";
+	case TLS_EXIT_PARENT:		return "parent exited";
 	case TLS_EXIT_PARENT_KILL:	return "parent killed";
 	case TLS_EXIT_ERROR:		return "error";
 	case TLS_EXIT_ERROR_BPF:	return "error raised by the BPF program";
@@ -754,7 +754,7 @@ static void print_exit_report(struct bpf_object *obj)
 	switch (uei.kind) {
 	case TLS_EXIT_ERROR_BPF:
 		printf("\nThe BPF program called scx_bpf_error(). Search "
-		       "src/bpf/tls_stubs.bpf.c\n");
+		       "src/bpf/tls_core.bpf.c\n");
 		printf("for TLS_ERR to find the assertions that can fire.\n");
 		break;
 	case TLS_EXIT_ERROR_STALL:

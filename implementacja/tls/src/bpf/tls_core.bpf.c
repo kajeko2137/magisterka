@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * TLS - kernel-facing function stubs.
+ * TLS - kernel-facing scheduler callbacks and policy core.
  *
  * Copyright (c) 2026 <your name>
  *
@@ -17,7 +17,7 @@
  *
  *   - the loader (userspace/tls.c): opens, configures and attaches this
  *     object, and decodes the kernel's stop reason when it detaches
- *   - maps and per-CPU / per-task storage (src/include/tls_core.bpf.h)
+ *   - maps and per-CPU / per-task storage (src/include/tls_structures.bpf.h)
  *   - O(1) tier array primitives: push, swap-and-pop removal, unlink,
  *     occupancy queries, ticket recount (src/include/tls_bpf_impl.h)
  *   - the struct sched_ext_ops table (src/bpf/main.bpf.c)
@@ -208,7 +208,7 @@ static __always_inline u64 tls_scale_to_pool(u32 rnd, u64 total_tickets)
  */
 s32 BPF_STRUCT_OPS(tls_init)
 {
-    // look into tls_core.bpf.h for the declaration of this type
+    // look into tls_structures.bpf.h for the declaration of this type
 	struct tls_cpu_ctx *cpu_ctx;
 	u32 nr_cpus = scx_bpf_nr_cpu_ids();
 	u32 cpu; //just a loop counter

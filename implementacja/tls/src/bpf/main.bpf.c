@@ -22,7 +22,7 @@
  * WHAT YOU IMPLEMENT
  * ---------------------------------------------------------------------------
  * Nothing in this file. Every function body you need to write is in
- * src/bpf/tls_stubs.bpf.c, and each one carries the kernel's contract for
+ * src/bpf/tls_core.bpf.c, and each one carries the kernel's contract for
  * that callback. Start with the implementation order in that file's header.
  *
  * The only things here you might touch, both marked below:
@@ -39,12 +39,12 @@
  *                            whose names changed between kernel releases
  *   <scx/user_exit_info.bpf.h>  the UEI map used by tls_exit()
  *   tls_intf.h            tier geometry and state layouts
- *   tls_core.bpf.h        maps, globals, tunables  (needs the kernel types)
+ *   tls_structures.bpf.h  maps, globals, tunables  (needs the kernel types)
  *   tls_bpf_impl.h        tier primitives         (needs the maps)
  *   tls_helpers.bpf.c     policy helpers          (needs the primitives)
- *   tls_stubs.bpf.c       callbacks               (needs all of the above)
+ *   tls_core.bpf.c        callbacks               (needs all of the above)
  *
- * tls_stubs.bpf.c is included last because the ops table at the bottom of
+ * tls_core.bpf.c is included last because the ops table at the bottom of
  * this file takes the address of every callback, so the callbacks must be
  * declared first.
  *
@@ -62,7 +62,7 @@
 #include <scx/user_exit_info.bpf.h>
 
 #include "tls_intf.h"
-#include "tls_core.bpf.h"
+#include "tls_structures.bpf.h"
 #include "tls_bpf_impl.h"
 
 char _license[] SEC("license") = "GPL";
@@ -83,7 +83,7 @@ UEI_DEFINE(tls_uei);
  * The callback implementations, and the lottery algorithm that belongs
  * between them.
  */
-#include "tls_stubs.bpf.c"
+#include "tls_core.bpf.c"
 
 /*
  * ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ UEI_DEFINE(tls_uei);
  * ---------------------------------------------------------------------------
  * Only the members listed below are set. Every unset member is NULL and the
  * kernel falls back to its own defined behaviour for that callback, which is
- * documented per callback in tls_stubs.bpf.c so that you can always tell
+ * documented per callback in tls_core.bpf.c so that you can always tell
  * "not called" from "called and did nothing".
  *
  *   Member          Implemented in             Optional?
@@ -127,7 +127,7 @@ UEI_DEFINE(tls_uei);
  *
  * Deliberately NOT registered:
  *
- *   dequeue   tls_dequeue() exists and is documented in the stubs file,
+ *   dequeue   tls_dequeue() exists and is documented in the core file,
  *             but is left unregistered. sched_ext calls dequeue() when a task
  *             leaves a DSQ, and this scheduler unlinks tasks explicitly in
  *             the lifecycle callbacks, so registering it would do the same

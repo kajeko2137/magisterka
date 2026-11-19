@@ -2,7 +2,7 @@
 /*
  * TLS - tier array maintenance helpers.
  *
- * Included by src/bpf/main.bpf.c after tls_core.bpf.h. Depends on the
+ * Included by src/bpf/main.bpf.c after tls_structures.bpf.h. Depends on the
  * maps declared there (tls_this_cpu_ctx, tls_task_ctx, tls_stats).
  *
  * ---------------------------------------------------------------------------
@@ -12,7 +12,7 @@
  * arrays self-consistent and enforce the invariants the verifier cannot
  * check. They contain no scheduling decisions: nothing here chooses a tier,
  * decides when to demote, or draws a ticket. Every such decision lives in
- * src/bpf/tls_stubs.bpf.c.
+ * src/bpf/tls_core.bpf.c.
  *
  * You should not need to edit this file to implement TLS. If you find
  * yourself wanting to, that is a signal the interface between mechanism and
@@ -40,7 +40,7 @@
  *   - applies a TIER_SANCTUARY RDTSC budget.
  *
  * Those are the TLS algorithm and they belong in
- * src/bpf/tls_stubs.bpf.c. tls_weight_table_init() below copies the
+ * src/bpf/tls_core.bpf.c. tls_weight_table_init() below copies the
  * *document's* weights into live state; it does not decide them.
  *
  * If a future change to this file starts making decisions, the split has
@@ -176,7 +176,7 @@ static __always_inline u64 tls_tickets_of_tier(struct tls_cpu_ctx *cpu_ctx,
  * table. It exists so that the 150 ms starvation rotation can be applied by
  * permuting four u32 values instead of relocating task pointers, which is
  * what makes the rotation O(1) and free of per-task bookkeeping. The
- * rotation itself is policy and therefore lives in tls_stubs.bpf.c; see
+ * rotation itself is policy and therefore lives in tls_core.bpf.c; see
  * the TODO on tls_tick().
  */
 static __always_inline void tls_weight_table_init(struct tls_cpu_ctx *cpu_ctx)
@@ -281,7 +281,7 @@ static __always_inline void tls_update_load_factor(struct tls_cpu_ctx *cpu_ctx)
  * On -2 with soft_overflow on, the task is not linked and the caller must
  * put it somewhere else. Dropping a task on the floor is never acceptable:
  * an unqueued runnable task is a hang, which the kernel reports as
- * SCX_EXIT_ERROR_STALL. See tls_stubs.bpf.c:tls_enqueue() for the
+ * SCX_EXIT_ERROR_STALL. See tls_core.bpf.c:tls_enqueue() for the
  * fallback the default implementation uses.
  */
 static __always_inline int tls_tier_push(struct tls_cpu_ctx *cpu_ctx,

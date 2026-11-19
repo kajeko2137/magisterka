@@ -17,11 +17,11 @@
  *
  * There is intentionally no global DSQ of our own: every task is parked on
  * its owning CPU's built-in local DSQ, and the runqueues above are the
- * scheduler's own bookkeeping. See tls_stubs.bpf.c:dispatch() for the
+ * scheduler's own bookkeeping. See tls_core.bpf.c:dispatch() for the
  * reasoning, and change it if the policy needs a shared queue.
  */
-#ifndef __TLS_CORE_BPF_H
-#define __TLS_CORE_BPF_H
+#ifndef __TLS_STRUCTURES_BPF_H
+#define __TLS_STRUCTURES_BPF_H
 
 #include "tls_intf.h"
 
@@ -161,4 +161,4 @@ static __always_inline void tls_stat_add(enum tls_stat_id id, u64 n)
 		__sync_fetch_and_add(v, n);
 }
 
-#endif /* __TLS_CORE_BPF_H */
+#endif /* __TLS_STRUCTURES_BPF_H */

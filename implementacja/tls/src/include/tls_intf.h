@@ -117,7 +117,7 @@ typedef signed long s64;
 
 /*
  * Maximum number of CPUs the per-CPU arrays cover. The scheduler refuses to
- * load if the machine reports more (see init() in tls_stubs.bpf.c).
+ * load if the machine reports more (see init() in tls_core.bpf.c).
  */
 #define TLS_MAX_CPUS		256u
 
@@ -278,7 +278,7 @@ struct tls_cpu_ctx {
 	 * NOT the compile-time table in tls_tickets_for(): the starvation
 	 * rotation permutes these values, which is what makes the rotation
 	 * O(1) with no data movement. See tls_rotate_weights() in
-	 * tls_stubs.bpf.c for the argument.
+	 * tls_core.bpf.c for the argument.
 	 *
 	 * Invariant: for every tier, weights[slot] equals the weight the
 	 * architecture document assigns to the tier this slot represents
@@ -343,7 +343,7 @@ struct tls_cpu_ctx {
 /* ------------------------------------------------------------------ */
 /*
  * Populated by the loader into the .rodata map before attach. The BPF side
- * reads these through the `tunables` global defined in tls_core.bpf.h;
+ * reads these through the `tunables` global defined in tls_structures.bpf.h;
  * they are read-only from BPF.
  *
  * Every field has a safe default in the loader. A zero-initialised
